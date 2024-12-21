@@ -1,75 +1,89 @@
-<header>
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
-<!--
-  <<< Author notes: Course header >>>
-  Include a 1280×640 image, course title in sentence case, and a concise description in emphasis.
-  In your repository settings: enable template repository, add your 1280×640 social image, auto delete head branches.
-  Add your open source license, GitHub uses MIT license.
--->
+-- Player
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
 
-# Introduction to GitHub
+-- Create Blur Effect
+local blur = Instance.new("BlurEffect")
+blur.Size = 15 -- Adjust blur intensity
+blur.Parent = Lighting
 
-_Get started using GitHub in less than an hour._
+-- Create 3D UI
+local screenPart = Instance.new("Part")
+screenPart.Name = "luau.dll"
+screenPart.Size = Vector3.new(8, 5, 0.1)
+screenPart.Anchored = true
+screenPart.CanCollide = false
+screenPart.Position = character.HumanoidRootPart.Position + Vector3.new(0, 5, -10)
+screenPart.Parent = workspace
 
-</header>
+-- Neon Effect for Part
+screenPart.Material = Enum.Material.Neon
+screenPart.Color = Color3.fromRGB(0, 255, 0)
 
-<!--
-  <<< Author notes: Step 1 >>>
-  Choose 3-5 steps for your course.
-  The first step is always the hardest, so pick something easy!
-  Link to docs.github.com for further explanations.
-  Encourage users to open new tabs for steps!
--->
+-- SurfaceGui for UI
+local surfaceGui = Instance.new("SurfaceGui")
+surfaceGui.Adornee = screenPart
+surfaceGui.Face = Enum.NormalId.Front
+surfaceGui.AlwaysOnTop = true
+surfaceGui.Parent = screenPart
 
-## Step 1: Create a branch
+-- Main UI Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(1, 0, 1, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 50, 20) -- Dark green background
+mainFrame.BackgroundTransparency = 0.5
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = surfaceGui
 
-_Welcome to "Introduction to GitHub"! :wave:_
+-- Floating Luminous Dots
+local function createLuminousDot()
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 5, 0, 5) -- Size of the dot
+    dot.Position = UDim2.new(math.random(), 0, math.random(), 0) -- Random start position
+    dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Bright green
+    dot.BackgroundTransparency = 0.2
+    dot.BorderSizePixel = 0
+    dot.Parent = mainFrame
 
-**What is GitHub?**: GitHub is a collaboration platform that uses _[Git](https://docs.github.com/get-started/quickstart/github-glossary#git)_ for versioning. GitHub is a popular place to share and contribute to [open-source](https://docs.github.com/get-started/quickstart/github-glossary#open-source) software.
-<br>:tv: [Video: What is GitHub?](https://www.youtube.com/watch?v=pBy1zgt0XPc)
+    -- Animate Dot Floating
+    local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true)
+    local tween = TweenService:Create(dot, tweenInfo, {
+        Position = UDim2.new(math.random(), 0, math.random(), 0)
+    })
+    tween:Play()
+end
 
-**What is a repository?**: A _[repository](https://docs.github.com/get-started/quickstart/github-glossary#repository)_ is a project containing files and folders. A repository tracks versions of files and folders. For more information, see "[About repositories](https://docs.github.com/en/repositories/creating-and-managing-repositories/about-repositories)" from GitHub Docs.
+-- Create Multiple Dots
+for _ = 1, 50 do
+    createLuminousDot()
+end
 
-**What is a branch?**: A _[branch](https://docs.github.com/en/get-started/quickstart/github-glossary#branch)_ is a parallel version of your repository. By default, your repository has one branch named `main` and it is considered to be the definitive branch. Creating additional branches allows you to copy the `main` branch of your repository and safely make any changes without disrupting the main project. Many people use branches to work on specific features without affecting any other parts of the project.
+-- Green Glow Text
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(0.8, 0, 0.2, 0)
+textLabel.Position = UDim2.new(0.1, 0, 0.4, 0)
+textLabel.BackgroundTransparency = 1
+textLabel.Text = "Welcome to luau.dll"
+textLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+textLabel.Font = Enum.Font.SciFi
+textLabel.TextScaled = true
+textLabel.Parent = mainFrame
 
-Branches allow you to separate your work from the `main` branch. In other words, everyone's work is safe while you contribute. For more information, see "[About branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches)".
+-- Glow Effect for Text
+local glow = Instance.new("UIStroke")
+glow.Thickness = 2
+glow.Color = Color3.fromRGB(0, 255, 0)
+glow.Parent = textLabel
 
-**What is a profile README?**: A _[profile README](https://docs.github.com/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme)_ is essentially an "About me" section on your GitHub profile where you can share information about yourself with the community on GitHub.com. GitHub shows your profile README at the top of your profile page. For more information, see "[Managing your profile README](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme)".
-
-![profile-readme-example](/images/profile-readme-example.png)
-
-### :keyboard: Activity: Your first branch
-
-1. Open a new browser tab and navigate to your newly made repository. Then, work on the steps in your second tab while you read the instructions in this tab.
-2. Navigate to the **< > Code** tab in the header menu of your repository.
-
-   ![code-tab](/images/code-tab.png)
-
-3. Click on the **main** branch drop-down.
-
-   ![main-branch-dropdown](/images/main-branch-dropdown.png)
-
-4. In the field, name your branch `my-first-branch`. In this case, the name must be `my-first-branch` to trigger the course workflow.
-5. Click **Create branch: my-first-branch** to create your branch.
-
-   ![create-branch-button](/images/create-branch-button.png)
-
-   The branch will automatically switch to the one you have just created.
-   The **main** branch drop-down bar will reflect your new branch and display the new branch name.
-
-6. Wait about 20 seconds then refresh this page (the one you're following instructions from). [GitHub Actions](https://docs.github.com/en/actions) will automatically update to the next step.
-
-<footer>
-
-<!--
-  <<< Author notes: Footer >>>
-  Add a link to get support, GitHub status page, code of conduct, license link.
--->
-
----
-
-Get help: [Post in our discussion board](https://github.com/orgs/skills/discussions/categories/introduction-to-github) &bull; [Review the GitHub status page](https://www.githubstatus.com/)
-
-&copy; 2024 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
-
-</footer>
+-- Animate the UI Part Floating
+local startPosition = screenPart.Position
+local upTween = TweenService:Create(screenPart, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, -1, true), {
+    Position = startPosition + Vector3.new(0, 0.5, 0)
+})
+upTween:Play()
