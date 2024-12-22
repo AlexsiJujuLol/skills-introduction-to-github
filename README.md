@@ -1,158 +1,82 @@
--- Services
-local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Camera = game:GetService("Workspace").CurrentCamera
-local RemoteEvent = ReplicatedStorage:WaitForChild("TestRemoteEvent")
 
+local RemoteEvent = ReplicatedStorage:WaitForChild("TestRemoteEvent")
 local Player = Players.LocalPlayer
-local character = Player.Character or Player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local playerGui = Player:WaitForChild("PlayerGui")
 
 -- Create a blur effect
 local blurEffect = Instance.new("BlurEffect")
-blurEffect.Size = 0  -- Start with no blur
-blurEffect.Parent = Camera
+blurEffect.Size = 0 -- Start with no blur
+blurEffect.Parent = Workspace.CurrentCamera
 
--- UI Setup (3D UI)
-local function create3DUI()
-    -- Create the BillboardGui (3D UI container)
-    local billboardGui = Instance.new("BillboardGui")
-    billboardGui.Size = UDim2.new(0, 300, 0, 100)  -- Adjust size of the UI
-    billboardGui.StudsOffset = Vector3.new(0, 5, 0)  -- Position the UI above the character
-    billboardGui.Adornee = character:WaitForChild("Head")  -- Attach to player's head
-    billboardGui.Parent = Workspace
+-- Create a part to display the 3D UI
+local uiPart = Instance.new("Part")
+uiPart.Size = Vector3.new(6, 4, 1)
+uiPart.Anchored = true
+uiPart.CanCollide = false
+uiPart.Position = Workspace.CurrentCamera.CFrame.Position + Workspace.CurrentCamera.CFrame.LookVector * 10
+uiPart.Parent = Workspace
 
-    -- Create a Frame for background with transparency
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)  -- Fill the entire BillboardGui
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black background
-    frame.BackgroundTransparency = 0.6  -- Semi-transparent black background
-    frame.Parent = billboardGui
+-- Attach SurfaceGui to the part
+local surfaceGui = Instance.new("SurfaceGui")
+surfaceGui.Face = Enum.NormalId.Front
+surfaceGui.Adornee = uiPart
+surfaceGui.AlwaysOnTop = true
+surfaceGui.Parent = uiPart
 
-    -- Create a TextLabel for content
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Text = "Smooth 3D UI with Animation"
-    textLabel.Size = UDim2.new(1, 0, 1, 0)  -- Fill the frame
-    textLabel.BackgroundTransparency = 1  -- No background for the label
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  -- White text
-    textLabel.TextScaled = true  -- Text will scale to fit
-    textLabel.Parent = frame
+-- Create a button on the SurfaceGui
+local parryButton = Instance.new("TextButton")
+parryButton.Size = UDim2.new(0.9, 0, 0.3, 0) -- Adjust button size
+parryButton.Position = UDim2.new(0.05, 0, 0.35, 0) -- Center on the SurfaceGui
+parryButton.Text = "Parry"
+parryButton.Font = Enum.Font.FredokaOne
+parryButton.TextSize = 36
+parryButton.BackgroundColor3 = Color3.fromRGB(255, 85, 85)
+parryButton.TextColor3 = Color3.new(1, 1, 1)
+parryButton.Parent = surfaceGui
 
-    -- Apply smooth animations to the TextLabel
-    local tweenInfo = TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, -1, true)  -- Loop the animation
-    local goal = {Rotation = 360}  -- Rotate the UI smoothly
-    local tween = TweenService:Create(textLabel, tweenInfo, goal)
-    tween:Play()
-end
+-- Add a creamy sound effect to the UI part
+local creamySound = Instance.new("Sound")
+creamySound.SoundId = "rbxassetid://YOUR_SOUND_ID" -- Replace with your creamy sound's asset ID
+creamySound.Volume = 1
+creamySound.PlayOnRemove = false
+creamySound.Parent = uiPart
 
--- BladeBall Setup
-local function createBladeBall()
-    local bladeBall = Instance.new("Model")
-    bladeBall.Name = "BladeBall"
-    bladeBall.Parent = Workspace
+-- Add glowing points (ParticleEmitter)
+local particleEmitter = Instance.new("ParticleEmitter")
+particleEmitter.LightEmission = 1
+particleEmitter.Size = NumberSequence.new(0.1, 0.5) -- Small glowing particles
+particleEmitter.Texture = "rbxassetid://258128463" -- Use a glowing circle texture
+particleEmitter.Lifetime = NumberRange.new(1, 3)
+particleEmitter.Rate = 50
+particleEmitter.Speed = NumberRange.new(0.5, 1)
+particleEmitter.VelocitySpread = 180
+particleEmitter.Color = ColorSequence.new(Color3.fromRGB(255, 255, 128)) -- Soft yellow glow
+particleEmitter.Parent = uiPart
 
-    local ballPart = Instance.new("Part")
-    ballPart.Name = "BallPart"
-    ballPart.Shape = Enum.PartType.Ball
-    ballPart.Size = Vector3.new(2, 2, 2)
-    ballPart.Position = Camera.CFrame.Position + Vector3.new(10, 5, 0)  -- Spawn above the player
-    ballPart.Anchored = false
-    ballPart.CanCollide = true
-    ballPart.Parent = bladeBall
-
-    -- Apply velocity to simulate the ball's movement
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
-    bodyVelocity.Velocity = Vector3.new(math.random(-50, 50), 0, math.random(-50, 50)) * 10
-    bodyVelocity.Parent = ballPart
-
-    -- Return BladeBall for further manipulation if needed
-    return bladeBall
-end
-
--- Auto-parry spam mechanism
-local autoParryEnabled = false
-local parryInterval = 0.1  -- Interval for auto-parry spam (in seconds)
-
-local function triggerParry()
+-- Button click functionality to trigger parry and play sound
+parryButton.MouseButton1Click:Connect(function()
     RemoteEvent:FireServer("Parry")
-end
-
-local function autoParry()
-    while autoParryEnabled do
-        -- Check if a BladeBall is in range for parry
-        for _, ball in pairs(Workspace:GetChildren()) do
-            if ball:IsA("Model") and ball.Name == "BladeBall" then
-                local ballPart = ball:FindFirstChild("BallPart")
-                if ballPart and (humanoidRootPart.Position - ballPart.Position).Magnitude <= 10 then
-                    triggerParry()
-                    wait(parryInterval)
-                end
-            end
-        end
-        wait(0.1) -- Check periodically
-    end
-end
-
--- Button to toggle auto-parry
-local toggleAutoParryButton = Instance.new("TextButton")
-toggleAutoParryButton.Size = UDim2.new(0.9, 0, 0.3, 0)
-toggleAutoParryButton.Position = UDim2.new(0.05, 0, 0.7, 0)
-toggleAutoParryButton.Text = "Auto Parry: Off"
-toggleAutoParryButton.Font = Enum.Font.FredokaOne
-toggleAutoParryButton.TextSize = 36
-toggleAutoParryButton.BackgroundColor3 = Color3.fromRGB(85, 255, 85)
-toggleAutoParryButton.TextColor3 = Color3.new(1, 1, 1)
-toggleAutoParryButton.Parent = playerGui:WaitForChild("ScreenGui")
-
-toggleAutoParryButton.MouseButton1Click:Connect(function()
-    autoParryEnabled = not autoParryEnabled
-    if autoParryEnabled then
-        toggleAutoParryButton.Text = "Auto Parry: On"
-        spawn(autoParry)  -- Start auto parry when enabled
-    else
-        toggleAutoParryButton.Text = "Auto Parry: Off"
-    end
-end)
-
--- Create BladeBalls periodically
-spawn(function()
-    while true do
-        wait(5) -- Create a new BladeBall every 5 seconds
-        createBladeBall()
-    end
-end)
-
--- UI and Animation
-local function playWelcomeAnimation()
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Text = "Welcome to BladeBall"
-    textLabel.Size = UDim2.new(0.9, 0, 0.3, 0)
-    textLabel.Position = UDim2.new(0.05, 0, 0.35, 0)
-    textLabel.TextSize = 36
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Parent = playerGui:WaitForChild("ScreenGui")
-
-    -- Animate the text
-    local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false)
-    local goal = {Position = UDim2.new(0.05, 0, 0.2, 0)}
-    local tween = TweenService:Create(textLabel, tweenInfo, goal)
-    tween:Play()
+    creamySound:Play()
     
-    -- Wait before removing the text
-    wait(3)
-    textLabel:Destroy()
-end
+    -- Activate blur effect
+    for i = 1, 10 do
+        blurEffect.Size = i * 2 -- Gradually increase blur
+        wait(0.05)
+    end
+end)
 
--- Call the welcome animation when the player joins
-playWelcomeAnimation()
-
--- Rotation and Movement of the UI
+-- Rotate the UI to always face the player
 game:GetService("RunService").RenderStepped:Connect(function()
-    -- Always face the camera
-    -- You can add smooth movement or animations as required for your UI part
+    uiPart.CFrame = CFrame.new(uiPart.Position, Workspace.CurrentCamera.CFrame.Position)
+end)
+
+-- Deactivate blur when leaving
+Player.CharacterRemoving:Connect(function()
+    for i = 10, 1, -1 do
+        blurEffect.Size = i * 2 -- Gradually decrease blur
+        wait(0.05)
+    end
+    blurEffect:Destroy()
 end)
