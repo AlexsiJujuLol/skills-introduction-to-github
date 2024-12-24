@@ -209,7 +209,6 @@ local function GetClosestEnemy()
                 closest_distance = distance
                 closest_enemy = player
             end
-        end
     end
     
     return closest_enemy
