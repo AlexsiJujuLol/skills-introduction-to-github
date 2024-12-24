@@ -1,82 +1,113 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced UI with Discord Invite</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
 
-local RemoteEvent = ReplicatedStorage:WaitForChild("TestRemoteEvent")
-local Player = Players.LocalPlayer
+        .container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
 
--- Create a blur effect
-local blurEffect = Instance.new("BlurEffect")
-blurEffect.Size = 0 -- Start with no blur
-blurEffect.Parent = Workspace.CurrentCamera
+        h1 {
+            font-size: 3rem;
+            text-shadow: 0 0 10px #ffffff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff;
+            margin-bottom: 20px;
+        }
 
--- Create a part to display the 3D UI
-local uiPart = Instance.new("Part")
-uiPart.Size = Vector3.new(6, 4, 1)
-uiPart.Anchored = true
-uiPart.CanCollide = false
-uiPart.Position = Workspace.CurrentCamera.CFrame.Position + Workspace.CurrentCamera.CFrame.LookVector * 10
-uiPart.Parent = Workspace
+        .discord-invite {
+            padding: 20px;
+            background-color: #7289da;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
 
--- Attach SurfaceGui to the part
-local surfaceGui = Instance.new("SurfaceGui")
-surfaceGui.Face = Enum.NormalId.Front
-surfaceGui.Adornee = uiPart
-surfaceGui.AlwaysOnTop = true
-surfaceGui.Parent = uiPart
+        .discord-invite:hover {
+            background-color: #5b6e98;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+        }
 
--- Create a button on the SurfaceGui
-local parryButton = Instance.new("TextButton")
-parryButton.Size = UDim2.new(0.9, 0, 0.3, 0) -- Adjust button size
-parryButton.Position = UDim2.new(0.05, 0, 0.35, 0) -- Center on the SurfaceGui
-parryButton.Text = "Parry"
-parryButton.Font = Enum.Font.FredokaOne
-parryButton.TextSize = 36
-parryButton.BackgroundColor3 = Color3.fromRGB(255, 85, 85)
-parryButton.TextColor3 = Color3.new(1, 1, 1)
-parryButton.Parent = surfaceGui
+        .glowing-dots {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
 
--- Add a creamy sound effect to the UI part
-local creamySound = Instance.new("Sound")
-creamySound.SoundId = "rbxassetid://YOUR_SOUND_ID" -- Replace with your creamy sound's asset ID
-creamySound.Volume = 1
-creamySound.PlayOnRemove = false
-creamySound.Parent = uiPart
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            animation: glowing 5s infinite alternate;
+        }
 
--- Add glowing points (ParticleEmitter)
-local particleEmitter = Instance.new("ParticleEmitter")
-particleEmitter.LightEmission = 1
-particleEmitter.Size = NumberSequence.new(0.1, 0.5) -- Small glowing particles
-particleEmitter.Texture = "rbxassetid://258128463" -- Use a glowing circle texture
-particleEmitter.Lifetime = NumberRange.new(1, 3)
-particleEmitter.Rate = 50
-particleEmitter.Speed = NumberRange.new(0.5, 1)
-particleEmitter.VelocitySpread = 180
-particleEmitter.Color = ColorSequence.new(Color3.fromRGB(255, 255, 128)) -- Soft yellow glow
-particleEmitter.Parent = uiPart
+        @keyframes glowing {
+            0% {
+                transform: scale(0.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
 
--- Button click functionality to trigger parry and play sound
-parryButton.MouseButton1Click:Connect(function()
-    RemoteEvent:FireServer("Parry")
-    creamySound:Play()
-    
-    -- Activate blur effect
-    for i = 1, 10 do
-        blurEffect.Size = i * 2 -- Gradually increase blur
-        wait(0.05)
-    end
-end)
+    <div class="container">
+        <h1>Join Our Discord Server!</h1>
+        <button class="discord-invite" onclick="window.location.href='https://discord.gg/XCfbkJt5'">
+            Join Now
+        </button>
+    </div>
 
--- Rotate the UI to always face the player
-game:GetService("RunService").RenderStepped:Connect(function()
-    uiPart.CFrame = CFrame.new(uiPart.Position, Workspace.CurrentCamera.CFrame.Position)
-end)
+    <div class="glowing-dots" id="dots-container"></div>
 
--- Deactivate blur when leaving
-Player.CharacterRemoving:Connect(function()
-    for i = 10, 1, -1 do
-        blurEffect.Size = i * 2 -- Gradually decrease blur
-        wait(0.05)
-    end
-    blurEffect:Destroy()
-end)
+    <script>
+        // Generate glowing dots on the screen
+        const numberOfDots = 100;
+        const dotsContainer = document.getElementById('dots-container');
+
+        for (let i = 0; i < numberOfDots; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            dot.style.width = `${Math.random() * 10 + 5}px`;  // Random size
+            dot.style.height = dot.style.width;
+            dot.style.top = `${Math.random() * 100}vh`;
+            dot.style.left = `${Math.random() * 100}vw`;
+
+            // Randomize animation duration and delay
+            dot.style.animationDuration = `${Math.random() * 3 + 3}s`;
+            dot.style.animationDelay = `${Math.random() * 2}s`;
+
+            dotsContainer.appendChild(dot);
+        }
+    </script>
+
+</body>
+</html>
