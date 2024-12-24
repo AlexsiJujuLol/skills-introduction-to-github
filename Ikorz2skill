@@ -1,1 +1,172 @@
-https://raw.githubusercontent.com/AlexsiJujuLol/skills-introduction-to-github/main/README.md
+local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua'))()
+
+-- Create the UI window
+local Library_Window = Library.Add_Window('Acceptions')
+
+-- Blatant Tab
+local Blatant_Tab = Library_Window.Create_Tab({
+    name = 'Blatant',
+    icon = 'rbxassetid://'
+})
+
+-- Arsenal Tab
+local Arsenal_Tab = Library_Window.Create_Tab({
+    name = 'Arsenal',
+    icon = 'rbxassetid://1234567890' -- Change this to your desired icon ID
+})
+
+-- Blatant Section
+local Blatant_Section = Blatant_Tab.Create_Section()
+
+-- Auto Parry Toggle
+local Auto_Parry = Blatant_Section.Create_DropToggle({
+    name = 'Auto Parry',
+    section = 'left',
+    flag = 'Auto_Parry',
+    options = {'Custom', 'Random', 'Backwards'},
+    callback = function(state)
+        print('Auto Parry - ' .. (state and 'Enabled' or 'Disabled'))
+    end,
+    callback2 = function(selected)
+        print('Selected Parry Mode:', selected)
+    end
+})
+
+-- Arsenal Section
+local Arsenal_Section = Arsenal_Tab.Create_Section({
+    name = 'Arsenal Features'
+})
+
+-- Toggles for Aimbot, Silent Aim, ESP, and Wall Hack
+local aimbotEnabled, silentAimEnabled, espEnabled, wallHackEnabled = false, false, false, false
+
+-- Function to toggle Wall Hack
+local function toggleWallHack(state)
+    for _, part in pairs(workspace:GetChildren()) do
+        if part:IsA("Part") and part.CanCollide then
+            part.Transparency = state and 0.5 or 0
+            part.CanCollide = not state
+        end
+    end
+end
+
+-- Toggle for Aimbot
+Arsenal_Section.Create_Toggle({
+    name = 'Aimbot',
+    flag = 'Aimbot',
+    callback = function(state)
+        aimbotEnabled = state
+        print('Aimbot ' .. (state and 'Enabled' or 'Disabled'))
+    end
+})
+
+-- Toggle for Silent Aim
+Arsenal_Section.Create_Toggle({
+    name = 'Silent Aim',
+    flag = 'Silent_Aim',
+    callback = function(state)
+        silentAimEnabled = state
+        print('Silent Aim ' .. (state and 'Enabled' or 'Disabled'))
+    end
+})
+
+-- Toggle for ESP
+Arsenal_Section.Create_Toggle({
+    name = 'ESP',
+    flag = 'ESP',
+    callback = function(state)
+        espEnabled = state
+        print('ESP ' .. (state and 'Enabled' or 'Disabled'))
+    end
+})
+
+-- Toggle for Wall Hack
+Arsenal_Section.Create_Toggle({
+    name = 'Wall Hack',
+    flag = 'Wall_Hack',
+    callback = function(state)
+        wallHackEnabled = state
+        toggleWallHack(state)
+        print('Wall Hack ' .. (state and 'Enabled' or 'Disabled'))
+    end
+})
+
+-- Aimbot Logic Optimization
+local function aimbotLogic()
+    if not aimbotEnabled then return end
+
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = character.HumanoidRootPart
+        local closestEnemy, closestDistance = nil, math.huge
+
+        for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+            if targetPlayer ~= player and targetPlayer.Character then
+                local targetChar = targetPlayer.Character
+                local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+                if targetRoot then
+                    local distance = (rootPart.Position - targetRoot.Position).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestEnemy = targetRoot
+                    end
+                end
+            end
+        end
+
+        -- Aim at the nearest enemy
+        if closestEnemy then
+            if silentAimEnabled then
+                game.Workspace.CurrentCamera.CFrame = CFrame.new(game.Workspace.CurrentCamera.CFrame.Position, closestEnemy.Position)
+            else
+                -- Normal aimbot would rotate the player towards the target
+                -- Additional aimbot logic to rotate or set orientation can go here
+            end
+        end
+    end
+end
+
+-- ESP Logic Optimization
+local function espLogic()
+    if espEnabled then
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character then
+                local character = player.Character
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    -- Only show ESP for players that are alive
+                    local espPart = character:FindFirstChild("ESP_Part")
+                    if not espPart then
+                        espPart = Instance.new("Part")
+                        espPart.Name = "ESP_Part"
+                        espPart.Size = Vector3.new(4, 6, 2) -- Adjust ESP size
+                        espPart.Anchored = true
+                        espPart.CanCollide = false
+                        espPart.Material = Enum.Material.SmoothPlastic
+                        espPart.BrickColor = BrickColor.new("Bright red") -- Color of the ESP box
+                        espPart.Parent = character
+                    end
+                    espPart.CFrame = humanoidRootPart.CFrame
+                end
+            end
+        end
+    else
+        -- Clean up ESP when disabled
+        for _, player in pairs(game.Players:GetPlayers()) do
+            local character = player.Character
+            if character then
+                local espPart = character:FindFirstChild("ESP_Part")
+                if espPart then
+                    espPart:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- Run loops for aimbot and ESP
+game:GetService("RunService").RenderStepped:Connect(function()
+    aimbotLogic()
+    espLogic()
+end)
