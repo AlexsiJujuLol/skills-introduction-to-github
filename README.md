@@ -36,9 +36,8 @@ end
 
 -- Function to check if the ball is valid for parrying
 local function VerifyBall(Ball)
-    if typeof(Ball) == "Instance" and Ball:IsA("BasePart") and Ball:IsDescendantOf(Balls) and Ball:GetAttribute("realBall") == true then
-        return true
-    end
+    -- Verify if the ball is a valid instance and is in the "Balls" folder with the correct attribute
+    return Ball and Ball:IsA("BasePart") and Ball:IsDescendantOf(Balls) and Ball:GetAttribute("realBall") == true
 end
 
 -- Function to check if the player is the current target
@@ -57,19 +56,40 @@ end
 -- Auto Parry Logic
 local function AutoParry()
     while auto_parry_enabled do
-        local Balls = workspace:WaitForChild("Balls") -- Refresh the Balls folder reference
-        if not Balls then return end
+        local success, errorMessage = pcall(function()
+            local Balls = workspace:WaitForChild("Balls") -- Refresh the Balls folder reference
+            if not Balls then return end
 
-        for _, Ball in ipairs(Balls:GetChildren()) do
-            if VerifyBall(Ball) then
-                local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
-                local Velocity = (Ball.Position - Ball.Position).Magnitude -- Calculate velocity based on ball movement
-                
-                if (Distance / Velocity) <= 10 then -- Magic threshold for parry decision
-                    Parry()  -- Trigger the parry
+            -- Iterate through all the balls and check if they are valid
+            for _, Ball in ipairs(Balls:GetChildren()) do
+                if VerifyBall(Ball) then
+                    -- Calculate the distance between the ball and the camera's focus
+                    local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
+                    
+                    -- Track ball's position and calculate velocity
+                    local PreviousPosition = Ball.Position
+                    local LastTick = tick()
+
+                    -- Detect when the ball's position changes
+                    Ball:GetPropertyChangedSignal("Position"):Connect(function()
+                        local Velocity = (Ball.Position - PreviousPosition).Magnitude / (tick() - LastTick)
+                        -- If the distance and velocity ratio meet the threshold, trigger parry
+                        if (Distance / Velocity) <= 10 then
+                            Parry()  -- Trigger the parry
+                        end
+                        PreviousPosition = Ball.Position -- Update the previous position
+                        LastTick = tick()  -- Update the last tick time
+                    end)
                 end
             end
+        end)
+        
+        if not success then
+            -- If there's an error, kick the player with the message
+            Player:Kick("Report to Ikorz: Script not working. Error: " .. errorMessage)
+            return
         end
+        
         wait(0.05) -- Frequent ball detection without lag
     end
 end
@@ -140,7 +160,7 @@ Balls.ChildAdded:Connect(function(Ball)
     Ball:GetPropertyChangedSignal("Position"):Connect(function()
         if IsTarget() then -- Only proceed if the player is the target
             local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
-            local Velocity = (OldPosition - Ball.Position).Magnitude -- Using distance change as velocity (since .Velocity didn't work)
+            local Velocity = (OldPosition - Ball.Position).Magnitude / (tick() - OldTick) -- Improved velocity calculation
             
             print('Distance:', Distance, 'Velocity:', Velocity, 'Time:', Distance / Velocity)
         
