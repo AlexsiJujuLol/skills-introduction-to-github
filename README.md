@@ -177,3 +177,140 @@ Balls.ChildAdded:Connect(function(Ball)
         end
     end)
 end)
+
+-- Add a new Tab for "Rivals"
+local Rivals_Tab = Library_Window.Create_Tab({
+    name = 'Rivals',
+    icon = 'rbxassetid://6023426975' -- Example icon, change as needed
+})
+
+-- Create a Section for the "Rivals" Tab
+local Rivals_Section = Rivals_Tab.Create_Section()
+
+-- Aimbot Variables
+local aimbot_enabled = false
+local aimbot_fov = 60
+local target_enemy = nil
+
+-- ESP Wall Hack Variables
+local esp_enabled = false
+local esp_wall_parts = {}
+
+-- Function to detect the closest enemy
+local function GetClosestEnemy()
+    local closest_enemy = nil
+    local closest_distance = math.huge
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Player and player.Character and player.Character:FindFirstChild("Head") then
+            local enemy_head = player.Character:FindFirstChild("Head")
+            local distance = (enemy_head.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
+            if distance < closest_distance then
+                closest_distance = distance
+                closest_enemy = player
+            end
+        end
+    end
+    
+    return closest_enemy
+end
+
+-- Aimbot Logic
+local function Aimbot()
+    while aimbot_enabled do
+        local closest_enemy = GetClosestEnemy()
+        if closest_enemy then
+            local enemy_head = closest_enemy.Character:FindFirstChild("Head")
+            if enemy_head then
+                local screen_position, on_screen = workspace.CurrentCamera:WorldToViewportPoint(enemy_head.Position)
+                if on_screen then
+                    -- Calculate FOV (Field of View) for aimbot
+                    local mouse_position = game:GetService("UserInputService"):GetMouseLocation()
+                    local distance = (Vector2.new(screen_position.X, screen_position.Y) - mouse_position).Magnitude
+                    if distance < aimbot_fov then
+                        -- Smoothly move the camera to the enemy's head
+                        workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, enemy_head.Position)
+                    end
+                end
+            end
+        end
+        wait(0.05)
+    end
+end
+
+-- ESP Wall Hack Logic
+local function ToggleESP()
+    for _, part in pairs(esp_wall_parts) do
+        if part then
+            part:Destroy() -- Remove previous ESP parts
+        end
+    end
+
+    esp_wall_parts = {}
+    
+    if esp_enabled then
+        for _, object in pairs(workspace:GetDescendants()) do
+            if object:IsA("BasePart") and object.Name ~= "Terrain" then
+                local esp_part = Instance.new("BillboardGui")
+                esp_part.Adornee = object
+                esp_part.Size = UDim2.new(0, 200, 0, 50)
+                esp_part.StudsOffset = Vector3.new(0, 3, 0)
+                esp_part.Parent = object
+                
+                local label = Instance.new("TextLabel")
+                label.Size = UDim2.new(1, 0, 1, 0)
+                label.BackgroundTransparency = 1
+                label.TextColor3 = Color3.fromRGB(255, 0, 0)
+                label.Text = object.Name
+                label.Parent = esp_part
+                
+                table.insert(esp_wall_parts, esp_part)
+            end
+        end
+    end
+end
+
+-- Create Aimbot Toggle in UI
+Rivals_Section.Create_DropToggle({
+    name = 'Aimbot',
+    section = 'left',
+    flag = 'Aimbot',
+    options = {'Enabled', 'Disabled'},
+    callback = function(state)
+        aimbot_enabled = (state == 'Enabled')
+        if aimbot_enabled then
+            print('Aimbot Enabled')
+            task.spawn(Aimbot)  -- Start Aimbot when enabled
+        else
+            print('Aimbot Disabled')
+        end
+    end
+})
+
+-- Create Aimbot FOV Slider
+Rivals_Section.Create_Slider({
+    name = 'Aimbot FOV',
+    flag = 'Aimbot_FOV',
+    min = 10,
+    max = 180,
+    default = 60,
+    callback = function(value)
+        aimbot_fov = value
+        print('Aimbot FOV set to:', value)
+    end
+})
+
+-- Create ESP Toggle in UI
+Rivals_Section.Create_Toggle({
+    name = 'ESP Wall Hack',
+    section = 'left',
+    flag = 'ESP_Wall_Hack',
+    callback = function(state)
+        esp_enabled = state
+        ToggleESP()
+        print('ESP Wall Hack', esp_enabled and 'Enabled' or 'Disabled')
+    end
+})
+
+-- Optional: Debugging message to check UI setup
+print("Rivals Tab (Aimbot & ESP) UI Loaded.")
