@@ -1,113 +1,159 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced UI with Discord Invite</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: black;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
+-- Load Library for UI (Add it in case of missing library)
+local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua'))()
 
-        .container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
+-- Create the main window for UI
+local Library_Window = Library.Add_Window('Acceptions')
 
-        h1 {
-            font-size: 3rem;
-            text-shadow: 0 0 10px #ffffff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff;
-            margin-bottom: 20px;
-        }
+-- Create a Tab for "Blade Ball"
+local BladeBall_Tab = Library_Window.Create_Tab({
+    name = 'Blade Ball',
+    icon = 'rbxassetid://6023426975' -- Example icon, change as needed
+})
 
-        .discord-invite {
-            padding: 20px;
-            background-color: #7289da;
-            color: white;
-            font-size: 1.5rem;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-        }
+-- Create a Section for the "Blade Ball" Tab
+local BladeBall_Section = BladeBall_Tab.Create_Section()
 
-        .discord-invite:hover {
-            background-color: #5b6e98;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-        }
+-- Auto Parry Variables
+local auto_parry_enabled = false
+local auto_parry_distance = 10
+local spam_speed = 0.5
+local Debug = false  -- Set this to true if you want debug output
 
-        .glowing-dots {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local workspace = game:GetService("Workspace")
+local Player = Players.LocalPlayer
+local Remotes = ReplicatedStorage:WaitForChild("Remotes", 9e9)
+local Balls = workspace:WaitForChild("Balls", 9e9)
 
-        .dot {
-            position: absolute;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.8);
-            animation: glowing 5s infinite alternate;
-        }
+-- Function to print debug information
+local function print(...)
+    if Debug then
+        warn(...)
+    end
+end
 
-        @keyframes glowing {
-            0% {
-                transform: scale(0.5);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(1.5);
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
-<body>
+-- Function to check if the ball is valid for parrying
+local function VerifyBall(Ball)
+    if typeof(Ball) == "Instance" and Ball:IsA("BasePart") and Ball:IsDescendantOf(Balls) and Ball:GetAttribute("realBall") == true then
+        return true
+    end
+end
 
-    <div class="container">
-        <h1>Join Our Discord Server!</h1>
-        <button class="discord-invite" onclick="window.location.href='https://discord.gg/XCfbkJt5'">
-            Join Now
-        </button>
-    </div>
+-- Function to check if the player is the current target
+local function IsTarget()
+    return Player.Character and Player.Character:FindFirstChild("Highlight")
+end
 
-    <div class="glowing-dots" id="dots-container"></div>
+-- Function to trigger the parry action
+local function Parry()
+    local ParryRemote = Remotes:WaitForChild("ParryButtonPress")
+    if ParryRemote then
+        ParryRemote:Fire()  -- Fire the Parry action
+    end
+end
 
-    <script>
-        // Generate glowing dots on the screen
-        const numberOfDots = 100;
-        const dotsContainer = document.getElementById('dots-container');
+-- Auto Parry Logic
+local function AutoParry()
+    while auto_parry_enabled do
+        local Balls = workspace:WaitForChild("Balls") -- Refresh the Balls folder reference
+        if not Balls then return end
 
-        for (let i = 0; i < numberOfDots; i++) {
-            const dot = document.createElement('div');
-            dot.classList.add('dot');
-            dot.style.width = `${Math.random() * 10 + 5}px`;  // Random size
-            dot.style.height = dot.style.width;
-            dot.style.top = `${Math.random() * 100}vh`;
-            dot.style.left = `${Math.random() * 100}vw`;
+        for _, Ball in ipairs(Balls:GetChildren()) do
+            if VerifyBall(Ball) then
+                local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
+                local Velocity = (Ball.Position - Ball.Position).Magnitude -- Calculate velocity based on ball movement
+                
+                if (Distance / Velocity) <= 10 then -- Magic threshold for parry decision
+                    Parry()  -- Trigger the parry
+                end
+            end
+        end
+        wait(0.05) -- Frequent ball detection without lag
+    end
+end
 
-            // Randomize animation duration and delay
-            dot.style.animationDuration = `${Math.random() * 3 + 3}s`;
-            dot.style.animationDelay = `${Math.random() * 2}s`;
+-- Create Auto Parry Toggle in UI
+local Auto_Parry = BladeBall_Section.Create_DropToggle({
+    name = 'Auto Parry',
+    section = 'left',
+    flag = 'Auto_Parry',
+    options = {'Custom', 'Random', 'Backwards'},
+    callback = function(state)
+        auto_parry_enabled = state
+        if auto_parry_enabled then
+            print('Auto Parry Enabled')
+            task.spawn(AutoParry)  -- Start Auto Parry when enabled
+        else
+            print('Auto Parry Disabled')
+        end
+    end,
 
-            dotsContainer.appendChild(dot);
-        }
-    </script>
+    callback2 = function(selected)
+        print('Selected Auto Parry option:', selected)
+    end
+})
 
-</body>
-</html>
+-- Example: Adjust Parry Distance
+BladeBall_Section.Create_Slider({
+    name = 'Parry Distance',
+    flag = 'BladeBall_Parry_Distance',
+    min = 1,
+    max = 50,
+    default = 10,
+    callback = function(value)
+        auto_parry_distance = value
+        print('Parry Distance set to:', value)
+    end
+})
+
+-- Example: Adjust Spam Speed
+BladeBall_Section.Create_Slider({
+    name = 'Spam Speed',
+    flag = 'BladeBall_Spam_Speed',
+    min = 0.1,
+    max = 1,
+    default = 0.5,
+    callback = function(value)
+        spam_speed = value
+        print('Spam Speed set to:', value)
+    end
+})
+
+-- Optional: Debugging message to check UI setup
+print("Blade Ball Auto Parry UI Loaded.")
+
+-- Main logic for Auto Parry when the ball is detected and the player is the target
+
+Balls.ChildAdded:Connect(function(Ball)
+    if not VerifyBall(Ball) then
+        return -- Ignore if it's not a valid ball
+    end
+    
+    print('Ball Spawned:', Ball) -- Debugging the ball spawn
+    
+    local OldPosition = Ball.Position
+    local OldTick = tick()
+
+    -- Detect when the ball's position changes
+    Ball:GetPropertyChangedSignal("Position"):Connect(function()
+        if IsTarget() then -- Only proceed if the player is the target
+            local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
+            local Velocity = (OldPosition - Ball.Position).Magnitude -- Using distance change as velocity (since .Velocity didn't work)
+            
+            print('Distance:', Distance, 'Velocity:', Velocity, 'Time:', Distance / Velocity)
+        
+            -- If the ball is moving towards the player and within range, trigger the parry
+            if (Distance / Velocity) <= 10 then -- Magic number threshold, works well in practice.
+                Parry() -- Parry the ball
+            end
+        end
+        
+        -- Update the old position at a fixed rate (to prevent rapid updates)
+        if (tick() - OldTick >= 1/60) then
+            OldTick = tick()
+            OldPosition = Ball.Position
+        end
+    end)
+end)
