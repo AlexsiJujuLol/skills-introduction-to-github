@@ -3,6 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
+local Debris = game:GetService("Debris")
 
 -- Load the Cloud UI Library
 local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua'))()
@@ -13,6 +14,8 @@ local auto_parry_enabled = false
 local auto_parry_distance = 10
 local show_parry_circle = false
 local parry_circle = nil
+local last_parry_time = 0
+local parry_cooldown = 0.1  -- Cooldown between parries to avoid too many actions
 
 -- Function to update the parry circle's position and size
 local function UpdateParryCircle()
@@ -51,7 +54,7 @@ local function UpdateCirclePosition()
     end
 end
 
--- Function to automatically parry balls
+-- Function to automatically parry balls with enhanced performance
 local function AutoParryBall()
     while auto_parry_enabled do
         if not player.Character then return end
@@ -59,23 +62,34 @@ local function AutoParryBall()
         local character = player.Character
         local rootPart = character:FindFirstChild("HumanoidRootPart")
 
-        if rootPart then
+        if rootPart and tick() - last_parry_time > parry_cooldown then
+            last_parry_time = tick()  -- Update last parry time
+
+            local nearby_ball = nil
+            local min_distance = auto_parry_distance
+
+            -- Find the nearest ball within range
             for _, ball in pairs(workspace:GetChildren()) do
                 if ball.Name == "Ball" and ball:IsA("Part") then
                     local distance = (ball.Position - rootPart.Position).Magnitude
-                    if distance <= auto_parry_distance then
-                        -- Simulate a parry by applying a force to the ball
-                        local bodyVelocity = Instance.new("BodyVelocity")
-                        bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
-                        bodyVelocity.Velocity = (ball.Position - rootPart.Position).unit * 100
-                        bodyVelocity.Parent = ball
-                        game:GetService("Debris"):AddItem(bodyVelocity, 0.5) -- Cleanup after 0.5 seconds
-                        print("Parried a ball!")
+                    if distance <= min_distance then
+                        nearby_ball = ball
+                        min_distance = distance
                     end
                 end
             end
+
+            -- If a ball is within range, apply the parry logic
+            if nearby_ball then
+                local bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
+                bodyVelocity.Velocity = (nearby_ball.Position - rootPart.Position).unit * 100
+                bodyVelocity.Parent = nearby_ball
+                Debris:AddItem(bodyVelocity, 0.5)  -- Clean up after parry
+                print("Parried a ball!")
+            end
         end
-        task.wait(0.1)
+        task.wait(0.05)  -- Lower frequency of checks for performance
     end
 end
 
