@@ -1,14 +1,18 @@
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = game:GetService("Players").LocalPlayer.Name
 
 local MainWindow = Instance.new("Frame")
-MainWindow.Size = UDim2.new(0, 400, 0, 300)
+MainWindow.Size = UDim2.new(0, 500, 0, 400)
 MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
 MainWindow.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainWindow.Visible = false
+MainWindow.Active = true
+MainWindow.Draggable = true
 MainWindow.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -25,7 +29,7 @@ Shadow.ZIndex = 0
 Shadow.Parent = ScreenGui
 
 local OpenButton = Instance.new("TextButton")
-OpenButton.Size = UDim2.new(0, 120, 0, 40)
+OpenButton.Size = UDim2.new(0, 150, 0, 50)
 OpenButton.Position = UDim2.new(0, 20, 0, 20)
 OpenButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 OpenButton.Text = "Open UI"
@@ -39,8 +43,8 @@ OpenCorner.CornerRadius = UDim.new(0, 8)
 OpenCorner.Parent = OpenButton
 
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 120, 0, 40)
-CloseButton.Position = UDim2.new(1, -130, 0, 20)
+CloseButton.Size = UDim2.new(0, 150, 0, 50)
+CloseButton.Position = UDim2.new(1, -160, 0, 20)
 CloseButton.AnchorPoint = Vector2.new(1, 0)
 CloseButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 CloseButton.Text = "Close UI"
@@ -54,99 +58,57 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 8)
 CloseCorner.Parent = CloseButton
 
-local AimbotWindow = Instance.new("Frame")
-AimbotWindow.Size = UDim2.new(0, 300, 0, 200)
-AimbotWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-AimbotWindow.AnchorPoint = Vector2.new(0.5, 0.5)
-AimbotWindow.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-AimbotWindow.Visible = false
-AimbotWindow.Parent = ScreenGui
-
-local AimbotCorner = Instance.new("UICorner")
-AimbotCorner.CornerRadius = UDim.new(0, 10)
-AimbotCorner.Parent = AimbotWindow
-
-local AimbotToggle = Instance.new("TextButton")
-AimbotToggle.Size = UDim2.new(0, 200, 0, 40)
-AimbotToggle.Position = UDim2.new(0.5, 0, 0.5, 0)
-AimbotToggle.AnchorPoint = Vector2.new(0.5, 0.5)
-AimbotToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-AimbotToggle.Text = "Toggle Aimbot"
-AimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AimbotToggle.Font = Enum.Font.SourceSansBold
-AimbotToggle.TextSize = 18
-AimbotToggle.Parent = AimbotWindow
-
-local AimbotToggleCorner = Instance.new("UICorner")
-AimbotToggleCorner.CornerRadius = UDim.new(0, 8)
-AimbotToggleCorner.Parent = AimbotToggle
-
-local AimbotActive = false
-
-AimbotToggle.MouseButton1Click:Connect(function()
-    AimbotActive = not AimbotActive
-    if AimbotActive then
-        AimbotToggle.Text = "Aimbot: ON"
-    else
-        AimbotToggle.Text = "Aimbot: OFF"
-    end
-end)
-
-local AimbotButton = Instance.new("TextButton")
-AimbotButton.Size = UDim2.new(0, 120, 0, 40)
-AimbotButton.Position = UDim2.new(0.5, 0, 1, -50)
-AimbotButton.AnchorPoint = Vector2.new(0.5, 1)
-AimbotButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-AimbotButton.Text = "Aimbot Settings"
-AimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AimbotButton.Font = Enum.Font.SourceSansBold
-AimbotButton.TextSize = 18
-AimbotButton.Parent = MainWindow
-
-local AimbotButtonCorner = Instance.new("UICorner")
-AimbotButtonCorner.CornerRadius = UDim.new(0, 8)
-AimbotButtonCorner.Parent = AimbotButton
-
-AimbotButton.MouseButton1Click:Connect(function()
-    MainWindow.Visible = false
-    AimbotWindow.Visible = true
-end)
-
-local BackButton = Instance.new("TextButton")
-BackButton.Size = UDim2.new(0, 100, 0, 30)
-BackButton.Position = UDim2.new(0.5, 0, 1, -40)
-BackButton.AnchorPoint = Vector2.new(0.5, 1)
-BackButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-BackButton.Text = "Back"
-BackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-BackButton.Font = Enum.Font.SourceSansBold
-BackButton.TextSize = 18
-BackButton.Parent = AimbotWindow
-
-local BackButtonCorner = Instance.new("UICorner")
-BackButtonCorner.CornerRadius = UDim.new(0, 8)
-BackButtonCorner.Parent = BackButton
-
-BackButton.MouseButton1Click:Connect(function()
-    AimbotWindow.Visible = false
-    MainWindow.Visible = true
-end)
-
-local CreatedByLabel = Instance.new("TextLabel")
-CreatedByLabel.Size = UDim2.new(0, 200, 0, 30)
-CreatedByLabel.Position = UDim2.new(0.5, 0, 1, -10)
-CreatedByLabel.AnchorPoint = Vector2.new(0.5, 1)
-CreatedByLabel.BackgroundTransparency = 1
-CreatedByLabel.Text = "Created By Ikorz"
-CreatedByLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-CreatedByLabel.Font = Enum.Font.SourceSansBold
-CreatedByLabel.TextSize = 16
-CreatedByLabel.Parent = MainWindow
+local UI_Toggled = false
 
 OpenButton.MouseButton1Click:Connect(function()
     MainWindow.Visible = true
     OpenButton.Visible = false
+    UI_Toggled = true
     TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.3}):Play()
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
+    MainWindow.Visible = false
+    OpenButton.Visible = true
+    UI_Toggled = false
+    TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.5}):Play()
+end)
+
+UserInputService.InputBegan:Connect(function(input, isProcessed)
+    if isProcessed then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        UI_Toggled = not UI_Toggled
+        MainWindow.Visible = UI_Toggled
+        OpenButton.Visible = not UI_Toggled
+    end
+end)
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+MainWindow.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainWindow.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainWindow.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
