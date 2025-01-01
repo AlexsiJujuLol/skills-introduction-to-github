@@ -9,17 +9,17 @@ getgenv().aura_Enabled = true
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
 local local_player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local character = local_player.Character or local_player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 -- Variables
 local parryRemote = nil -- Parry remote (to be resolved)
 local closestThreat = nil
 local threatDetectionRange = 20 -- Range to detect threats (adjust based on game)
+local isUIToggled = false -- Tracks UI visibility state
 
 -- Resolve the parry remote
 function resolve_parry_Remote()
@@ -39,36 +39,17 @@ end
 -- UI Setup: Fluent Design Inspired
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 ScreenGui.Name = "FluentAutoParryUI"
+ScreenGui.Enabled = false -- UI starts hidden
 
 -- Blur Effect
 local BlurEffect = Instance.new("BlurEffect", Lighting)
 BlurEffect.Size = 0
-
--- Fluent Toggle Button
-local ToggleButton = Instance.new("Frame", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 140, 0, 50)
-ToggleButton.Position = UDim2.new(0, 20, 0, 20)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-ToggleButton.BorderSizePixel = 0
-ToggleButton.Visible = true
-
-local ToggleUICorner = Instance.new("UICorner", ToggleButton)
-ToggleUICorner.CornerRadius = UDim.new(0.1, 0)
-
-local ToggleText = Instance.new("TextLabel", ToggleButton)
-ToggleText.Size = UDim2.new(1, 0, 1, 0)
-ToggleText.Text = "Open UI"
-ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleText.BackgroundTransparency = 1
-ToggleText.TextScaled = true
-ToggleText.Font = Enum.Font.GothamBold
 
 -- Fluent Main UI
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0.4, 0, 0.5, 0)
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Visible = false
 
 local MainUICorner = Instance.new("UICorner", MainFrame)
 MainUICorner.CornerRadius = UDim.new(0.05, 0)
@@ -123,19 +104,27 @@ local ToggleUICorner = Instance.new("UICorner", ToggleAutoParry)
 ToggleUICorner.CornerRadius = UDim.new(0.1, 0)
 
 -- UI Functionality
-ToggleButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-    BlurEffect.Size = MainFrame.Visible and 24 or 0
-end)
-
 CloseButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
+    ScreenGui.Enabled = false
     BlurEffect.Size = 0
+    isUIToggled = false
 end)
 
 ToggleAutoParry.MouseButton1Click:Connect(function()
     getgenv().Fsploit.AutoParry = not getgenv().Fsploit.AutoParry
     ToggleAutoParry.Text = "Toggle Auto Parry (" .. (getgenv().Fsploit.AutoParry and "Enabled" or "Disabled") .. ")"
+end)
+
+-- Hotkey to toggle UI
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    -- Toggle UI with the "F" key (change if needed)
+    if input.KeyCode == Enum.KeyCode.F then
+        isUIToggled = not isUIToggled
+        ScreenGui.Enabled = isUIToggled
+        BlurEffect.Size = isUIToggled and 24 or 0
+    end
 end)
 
 -- Auto Parry Logic
@@ -149,7 +138,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Functions for threat detection and parry logic remain unchanged
+-- Functions for threat detection and parry logic
 function detectClosestThreat()
     -- Logic to find closest threat (replace with your game's threat detection)
 end
@@ -162,4 +151,4 @@ end
 
 -- Initialize
 resolve_parry_Remote()
-print("[INFO] Fluent UI Loaded. Auto Parry enabled.")
+print("[INFO] Fluent UI Loaded. Auto Parry enabled. Press 'F' to toggle the UI.")
