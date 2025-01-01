@@ -1,155 +1,172 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-local BlurEffect = Instance.new("BlurEffect")
-BlurEffect.Size = 0
-BlurEffect.Parent = Lighting
-
-local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
+local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Name = "SexyUILib"
+ScreenGui.Name = "ModernUI"
 
-local MainWindow = Instance.new("Frame")
-MainWindow.Size = UDim2.new(0, 500, 0, 400)
-MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
-MainWindow.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainWindow.BackgroundTransparency = 0.1
-MainWindow.BorderSizePixel = 0
-MainWindow.Visible = false
-MainWindow.Active = true
-MainWindow.Draggable = true
-MainWindow.Parent = ScreenGui
-
-local Gradient = Instance.new("UIGradient")
-Gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
-}
-Gradient.Rotation = 45
-Gradient.Parent = MainWindow
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 600, 0, 400)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = MainWindow
+MainCorner.Parent = MainFrame
 
-local OpenButton = Instance.new("TextButton")
-OpenButton.Size = UDim2.new(0, 150, 0, 50)
-OpenButton.Position = UDim2.new(0.5, 0, 0.85, 0)
-OpenButton.AnchorPoint = Vector2.new(0.5, 0.5)
-OpenButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-OpenButton.Text = "Open UI"
-OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.Font = Enum.Font.SourceSansBold
-OpenButton.TextSize = 18
-OpenButton.Parent = ScreenGui
+local TabsContainer = Instance.new("Frame")
+TabsContainer.Size = UDim2.new(1, 0, 0, 40)
+TabsContainer.Position = UDim2.new(0, 0, 0, 0)
+TabsContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+TabsContainer.BorderSizePixel = 0
+TabsContainer.Parent = MainFrame
 
-local OpenCorner = Instance.new("UICorner")
-OpenCorner.CornerRadius = UDim.new(0, 10)
-OpenCorner.Parent = OpenButton
+local TabsCorner = Instance.new("UICorner")
+TabsCorner.CornerRadius = UDim.new(0, 12)
+TabsCorner.Parent = TabsContainer
 
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 150, 0, 50)
-CloseButton.Position = UDim2.new(0.5, 0, 0.95, 0)
-CloseButton.AnchorPoint = Vector2.new(0.5, 0.5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-CloseButton.Text = "Close UI"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Font = Enum.Font.SourceSansBold
-CloseButton.TextSize = 18
-CloseButton.Parent = MainWindow
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 1, -40)
+ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 10)
-CloseCorner.Parent = CloseButton
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 12)
+ContentCorner.Parent = ContentFrame
 
-local AutoParryButton = Instance.new("TextButton")
-AutoParryButton.Size = UDim2.new(0, 200, 0, 50)
-AutoParryButton.Position = UDim2.new(0.5, 0, 0.4, 0)
-AutoParryButton.AnchorPoint = Vector2.new(0.5, 0.5)
-AutoParryButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-AutoParryButton.Text = "Auto Parry: OFF"
-AutoParryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoParryButton.Font = Enum.Font.SourceSansBold
-AutoParryButton.TextSize = 18
-AutoParryButton.Parent = MainWindow
+local function createTab(name, content)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Size = UDim2.new(0, 120, 0, 40)
+    TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.Text = name
+    TabButton.Font = Enum.Font.SourceSansBold
+    TabButton.TextSize = 16
+    TabButton.BorderSizePixel = 0
+    TabButton.Parent = TabsContainer
 
-local AutoParryCorner = Instance.new("UICorner")
-AutoParryCorner.CornerRadius = UDim.new(0, 10)
-AutoParryCorner.Parent = AutoParryButton
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = UDim.new(0, 12)
+    TabCorner.Parent = TabButton
 
-local AutoParryEnabled = false
+    local TabContent = Instance.new("Frame")
+    TabContent.Size = UDim2.new(1, 0, 1, 0)
+    TabContent.BackgroundTransparency = 1
+    TabContent.Visible = false
+    TabContent.Parent = ContentFrame
 
-AutoParryButton.MouseButton1Click:Connect(function()
-    AutoParryEnabled = not AutoParryEnabled
-    AutoParryButton.Text = AutoParryEnabled and "Auto Parry: ON" or "Auto Parry: OFF"
+    content.Parent = TabContent
 
-    if AutoParryEnabled then
-        local success, errorMsg = pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
-        end)
-        if not success then
-            print("Failed to load Auto Parry script:", errorMsg)
-        else
-            print("Auto Parry enabled")
-        end
-    else
-        print("Auto Parry disabled")
-    end
-end)
-
-OpenButton.MouseButton1Click:Connect(function()
-    MainWindow.Visible = true
-    OpenButton.Visible = false
-    TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 10}):Play()
-end)
-
-CloseButton.MouseButton1Click:Connect(function()
-    MainWindow.Visible = false
-    OpenButton.Visible = true
-    TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 0}):Play()
-end)
-
-UserInputService.InputBegan:Connect(function(input, isProcessed)
-    if not isProcessed and input.KeyCode == Enum.KeyCode.T then
-        local isVisible = not MainWindow.Visible
-        MainWindow.Visible = isVisible
-        OpenButton.Visible = not isVisible
-        TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = isVisible and 10 or 0}):Play()
-    end
-end)
-
-local dragging, dragInput, dragStart, startPos
-
-MainWindow.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainWindow.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+    TabButton.MouseButton1Click:Connect(function()
+        for _, child in pairs(ContentFrame:GetChildren()) do
+            if child:IsA("Frame") then
+                child.Visible = false
             end
-        end)
-    end
-end)
+        end
+        TabContent.Visible = true
+    end)
 
-MainWindow.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
+    return TabButton, TabContent
+end
 
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        MainWindow.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+local function createToggleButton(parent, labelText, callback)
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Size = UDim2.new(0.9, 0, 0, 40)
+    ToggleButton.Position = UDim2.new(0.05, 0, 0, 10)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleButton.Font = Enum.Font.SourceSansBold
+    ToggleButton.TextSize = 16
+    ToggleButton.Text = labelText .. ": OFF"
+    ToggleButton.Parent = parent
+
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 10)
+    ToggleCorner.Parent = ToggleButton
+
+    local isEnabled = false
+    ToggleButton.MouseButton1Click:Connect(function()
+        isEnabled = not isEnabled
+        ToggleButton.Text = labelText .. (isEnabled and ": ON" or ": OFF")
+        callback(isEnabled)
+    end)
+end
+
+local function toggleAutoParry(enabled)
+    if enabled then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
+    else
     end
-end)
+end
+
+local MainTabContent = Instance.new("Frame")
+createTab("Main", MainTabContent)
+
+local SettingsTabContent = Instance.new("Frame")
+createTab("Settings", SettingsTabContent)
+
+createToggleButton(MainTabContent, "Auto Parry", toggleAutoParry)
+
+local function createSlider(parent, labelText)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Size = UDim2.new(0.9, 0, 0, 40)
+    SliderFrame.Position = UDim2.new(0.05, 0, 0, 10)
+    SliderFrame.BackgroundTransparency = 1
+    SliderFrame.Parent = parent
+
+    local TextLabel = Instance.new("TextLabel")
+    TextLabel.Size = UDim2.new(0.5, 0, 1, 0)
+    TextLabel.Position = UDim2.new(0, 0, 0, 0)
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Text = labelText
+    TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel.Font = Enum.Font.SourceSans
+    TextLabel.TextSize = 16
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel.Parent = SliderFrame
+
+    local SliderBar = Instance.new("Frame")
+    SliderBar.Size = UDim2.new(0.4, 0, 0.4, 0)
+    SliderBar.Position = UDim2.new(0.5, 0, 0.3, 0)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    SliderBar.Parent = SliderFrame
+
+    local Slider = Instance.new("Frame")
+    Slider.Size = UDim2.new(0.1, 0, 1, 0)
+    Slider.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    Slider.Parent = SliderBar
+
+    local dragging = false
+
+    Slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+
+    Slider.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    SliderBar.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mousePos = game:GetService("UserInputService"):GetMouseLocation().X
+            local sliderPos = SliderBar.AbsolutePosition.X
+            local sliderSize = SliderBar.AbsoluteSize.X
+
+            local newScale = math.clamp((mousePos - sliderPos) / sliderSize, 0, 1)
+            Slider.Size = UDim2.new(newScale, 0, 1, 0)
+        end
+    end)
+end
+
+createSlider(SettingsTabContent, "Aimbot Sensitivity")
