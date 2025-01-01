@@ -19,11 +19,6 @@ local lastParriedBalls = {} -- Track parried balls
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 ScreenGui.Name = "AutoParryUI"
 
--- Blur Effect
-local Blur = Instance.new("BlurEffect", game.Lighting)
-Blur.Size = 15
-Blur.Enabled = false
-
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 500, 0, 400) -- Larger UI
 MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
@@ -89,7 +84,7 @@ local function get_humanoid_root_part()
 end
 
 local function get_ball()
-    local ballContainer = workspace:FindFirstChild("Balls") -- Ensure "Balls" is correct
+    local ballContainer = workspace:FindFirstChild("Balls")
     if not ballContainer then return nil end
 
     for _, ball in ipairs(ballContainer:GetChildren()) do
@@ -138,24 +133,6 @@ local function update_visualizer()
     end
 end
 
--- Blue Effect for Parry
-local function show_blue_effect()
-    if not effectsEnabled then return end
-
-    local blueEffect = Instance.new("Part")
-    blueEffect.Size = Vector3.new(5, 5, 5)
-    blueEffect.Shape = Enum.PartType.Ball
-    blueEffect.Anchored = true
-    blueEffect.CanCollide = false
-    blueEffect.Material = Enum.Material.ForceField
-    blueEffect.Color = Color3.fromRGB(0, 0, 255)
-    blueEffect.Position = get_humanoid_root_part().Position
-    blueEffect.Parent = workspace
-
-    TweenService:Create(blueEffect, TweenInfo.new(0.5), {Transparency = 1, Size = Vector3.new(15, 15, 15)}):Play()
-    Debris:AddItem(blueEffect, 0.5)
-end
-
 -- Parry Logic
 local function parry_if_valid()
     if parryCooldown or not autoParryEnabled then return end
@@ -168,12 +145,8 @@ local function parry_if_valid()
             local parryDistance = calculate_parry_distance()
 
             if distance <= parryDistance then
-                -- Perform parry
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-
-                -- Visual Effect
-                show_blue_effect()
 
                 -- Mark the ball as parried
                 lastParriedBalls[ball] = true
@@ -214,4 +187,10 @@ end)
 EffectsToggleButton.MouseButton1Click:Connect(function()
     effectsEnabled = not effectsEnabled
     EffectsToggleButton.Text = effectsEnabled and "Effects: ON" or "Effects: OFF"
-    EffectsToggleButton.BackgroundColor3 = effectsEnabled and Color3.fromRGB(50, 150,
+    EffectsToggleButton.BackgroundColor3 = effectsEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    sphere:Destroy()
+end)
