@@ -9,6 +9,8 @@ local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 -- Variables
 local visualise = true
 local autoParryEnabled = false
+local parryCooldown = false
+local cooldownTime = 0.2 -- 200 milliseconds cooldown
 
 -- Create GUI
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
@@ -146,15 +148,22 @@ local function update_visualizer()
     sphere.Position = humanoidRootPart.Position
 end
 
--- Parry Logic
+-- Parry Logic with Cooldown
 local function parry_if_valid(ball)
-    if ball and autoParryEnabled and sphere.Size.X > 0 then
+    if ball and autoParryEnabled and not parryCooldown then
         local humanoidRootPart = get_humanoid_root_part()
         if humanoidRootPart then
             local distance = (humanoidRootPart.Position - ball.Position).Magnitude
             if distance <= sphere.Size.X / 2 then
+                -- Trigger Parry
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+
+                -- Activate Cooldown
+                parryCooldown = true
+                task.delay(cooldownTime, function()
+                    parryCooldown = false
+                end)
             end
         end
     end
