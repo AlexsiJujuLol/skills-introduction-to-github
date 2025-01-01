@@ -1,5 +1,11 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+
+-- Add Blur Effect
+local BlurEffect = Instance.new("BlurEffect")
+BlurEffect.Size = 0
+BlurEffect.Parent = Lighting
 
 local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
@@ -115,6 +121,10 @@ OpenButton.MouseButton1Click:Connect(function()
     UI_Toggled = true
     MainWindow.Visible = true
     OpenButton.Visible = false
+
+    -- Tween to activate blur
+    TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 10}):Play()
+
     TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.3}):Play()
 end)
 
@@ -122,6 +132,10 @@ CloseButton.MouseButton1Click:Connect(function()
     UI_Toggled = false
     MainWindow.Visible = false
     OpenButton.Visible = true
+
+    -- Tween to deactivate blur
+    TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 0}):Play()
+
     TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.6}):Play()
 end)
 
@@ -131,6 +145,9 @@ UserInputService.InputBegan:Connect(function(input, isProcessed)
         UI_Toggled = not UI_Toggled
         MainWindow.Visible = UI_Toggled
         OpenButton.Visible = not UI_Toggled
+
+        -- Blur Effect toggle
+        TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = UI_Toggled and 10 or 0}):Play()
     end
 end)
 
