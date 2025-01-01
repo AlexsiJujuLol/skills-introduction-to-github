@@ -185,4 +185,4 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
-createVisualIndicator() -- Initial visual
+createVisualIndicator() -- Initialize visual
