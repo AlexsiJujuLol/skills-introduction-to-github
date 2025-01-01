@@ -1,188 +1,102 @@
-local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua'))()
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Player = Players.LocalPlayer
 
-local Library_Window = Library.Add_Window('Auto Parry Settings')
+local AutoParryEnabled = false
+local ParryDelay = 0.55
+local ParryCooldown = 1
+local DetectionRange = 50
+local Cooldown = tick()
+local Parried = false
+local Connection = nil
 
--- Tabs
-local AutoParry_Tab = Library_Window.Create_Tab({
-    name = 'Auto Parry',
-    icon = 'rbxassetid://'
-})
-
-local Visual_Tab = Library_Window.Create_Tab({
-    name = 'Visual',
-    icon = 'rbxassetid://'
-})
-
--- Sections
-local AutoParry_Section = AutoParry_Tab.Create_Section()
-local Visual_Section = Visual_Tab.Create_Section()
-
--- Global Variables
-getgenv().AutoParryEnabled = false
-getgenv().Mode = "Close Range"
-getgenv().ParryDelay = 0.2 -- Default delay
-getgenv().DetectionRange = 15 -- Default range
-getgenv().VisualEnabled = true
-getgenv().VisualColor = Color3.fromRGB(255, 0, 0)
-getgenv().VisualTransparency = 0.6
-local VisualIndicator -- Part for the visual range
-
--- Enable/Disable Auto Parry Toggle
-AutoParry_Section.Create_Toggle({
-    name = 'Enable Auto Parry',
-    flag = 'Auto_Parry',
-    callback = function(state)
-        getgenv().AutoParryEnabled = state
-        print("[INFO] Auto Parry is " .. (state and "Enabled" or "Disabled"))
-        updateVisualIndicator(getgenv().VisualEnabled)
-    end
-})
-
--- Parry Mode Dropdown
-AutoParry_Section.Create_Dropdown({
-    name = 'Parry Mode',
-    flag = 'Parry_Mode',
-    options = { 'Close Range', 'High Range', 'Auto' },
-    callback = function(mode)
-        getgenv().Mode = mode
-        print("[INFO] Parry Mode set to: " .. mode)
-        updateVisualIndicator(getgenv().VisualEnabled)
-    end
-})
-
--- Parry Delay Slider
-AutoParry_Section.Create_Slider({
-    name = 'Parry Delay',
-    min = 0.1,
-    max = 1.0,
-    default = getgenv().ParryDelay,
-    callback = function(value)
-        getgenv().ParryDelay = value
-        print("[INFO] Parry Delay set to: " .. value)
-    end
-})
-
--- Detection Range Slider
-AutoParry_Section.Create_Slider({
-    name = 'Detection Range',
-    min = 10,
-    max = 50,
-    default = getgenv().DetectionRange,
-    callback = function(value)
-        getgenv().DetectionRange = value
-        print("[INFO] Detection Range set to: " .. value)
-        updateVisualIndicator(getgenv().VisualEnabled)
-    end
-})
-
--- Visual Toggle
-Visual_Section.Create_Toggle({
-    name = 'Enable Visuals',
-    flag = 'Visual_Enabled',
-    callback = function(state)
-        getgenv().VisualEnabled = state
-        print("[INFO] Visuals are " .. (state and "Enabled" or "Disabled"))
-        updateVisualIndicator(state)
-    end
-})
-
--- Visual Color Picker
-Visual_Section.Create_ColorPicker({
-    name = 'Visual Color',
-    default = getgenv().VisualColor,
-    callback = function(color)
-        getgenv().VisualColor = color
-        print("[INFO] Visual Color set to:", color)
-        if VisualIndicator then
-            VisualIndicator.Color = color
-        end
-    end
-})
-
--- Visual Transparency Slider
-Visual_Section.Create_Slider({
-    name = 'Visual Transparency',
-    min = 0,
-    max = 1,
-    default = getgenv().VisualTransparency,
-    callback = function(value)
-        getgenv().VisualTransparency = value
-        print("[INFO] Visual Transparency set to:", value)
-        if VisualIndicator then
-            VisualIndicator.Transparency = value
-        end
-    end
-})
-
--- Visual Logic
-function createVisualIndicator()
-    if VisualIndicator then
-        VisualIndicator:Destroy()
-    end
-
-    VisualIndicator = Instance.new("Part")
-    VisualIndicator.Size = Vector3.new(1, 1, 1)
-    VisualIndicator.Anchored = true
-    VisualIndicator.CanCollide = false
-    VisualIndicator.Transparency = getgenv().VisualTransparency
-    VisualIndicator.Color = getgenv().VisualColor
-    VisualIndicator.Material = Enum.Material.Neon
-    VisualIndicator.Parent = workspace
-end
-
-function updateVisualIndicator(state)
-    if not state then
-        if VisualIndicator then
-            VisualIndicator.Transparency = 1 -- Hide indicator
-        end
-        return
-    end
-
-    if not VisualIndicator then
-        createVisualIndicator()
-    end
-
-    local HRP = detectHumanoidRootPart()
-    if not HRP then return end
-
-    VisualIndicator.Size = Vector3.new(getgenv().DetectionRange * 2, 1, getgenv().DetectionRange * 2)
-    VisualIndicator.Position = HRP.Position - Vector3.new(0, 3, 0)
-    VisualIndicator.Transparency = getgenv().VisualTransparency
-    VisualIndicator.Color = getgenv().VisualColor
-end
-
--- Helper Functions
-function detectBall()
-    for _, ball in ipairs(workspace:GetChildren()) do
-        if ball:IsA("BasePart") and ball.Name == "Ball" then
-            return ball
+local function GetBall()
+    for _, Ball in ipairs(workspace.Balls:GetChildren()) do
+        if Ball:GetAttribute("realBall") then
+            return Ball
         end
     end
 end
 
-function detectHumanoidRootPart()
-    return game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+local function ResetConnection()
+    if Connection then
+        Connection:Disconnect()
+        Connection = nil
+    end
 end
 
-function triggerParry()
-    print("[INFO] Parry Triggered!")
-    -- Add the actual parry trigger logic here
-end
+workspace.Balls.ChildAdded:Connect(function()
+    local Ball = GetBall()
+    if not Ball then return end
+    ResetConnection()
+    Connection = Ball:GetAttributeChangedSignal("target"):Connect(function()
+        Parried = false
+    end)
+end)
 
--- Auto Parry Logic
-game:GetService("RunService").RenderStepped:Connect(function()
-    if not getgenv().AutoParryEnabled then return end
+RunService.PreSimulation:Connect(function()
+    if not AutoParryEnabled then return end
 
-    local Ball, HRP = detectBall(), detectHumanoidRootPart()
+    local Ball = GetBall()
+    local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+
     if not Ball or not HRP then return end
 
-    -- Calculate Parry based on delay and range
-    local Speed = Ball.Velocity.Magnitude
+    local Speed = Ball.zoomies.VectorVelocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
 
-    if Distance <= getgenv().DetectionRange and Distance / Speed <= getgenv().ParryDelay then
-        triggerParry()
+    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and Distance / Speed <= ParryDelay then
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        Parried = true
+        Cooldown = tick()
+    end
+
+    if (tick() - Cooldown) >= ParryCooldown then
+        Parried = false
     end
 end)
 
-createVisualIndicator() -- Initialize visual
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua"))()
+local Window = Library.Add_Window("Auto Parry Settings")
+
+local AutoParryTab = Window.Create_Tab({ name = "Auto Parry" })
+local AutoParrySection = AutoParryTab.Create_Section()
+
+AutoParrySection.Create_Toggle({
+    name = "Enable Auto Parry",
+    flag = "AutoParryToggle",
+    callback = function(state)
+        AutoParryEnabled = state
+    end
+})
+
+AutoParrySection.Create_Slider({
+    name = "Parry Delay",
+    min = 0.1,
+    max = 1.0,
+    default = ParryDelay,
+    callback = function(value)
+        ParryDelay = value
+    end
+})
+
+AutoParrySection.Create_Slider({
+    name = "Detection Range",
+    min = 10,
+    max = 100,
+    default = DetectionRange,
+    callback = function(value)
+        DetectionRange = value
+    end
+})
+
+AutoParrySection.Create_Slider({
+    name = "Parry Cooldown",
+    min = 0.5,
+    max = 2.0,
+    default = ParryCooldown,
+    callback = function(value)
+        ParryCooldown = value
+    end
+})
