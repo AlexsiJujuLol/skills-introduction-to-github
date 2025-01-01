@@ -5,32 +5,51 @@ local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or game:GetServi
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Name = game:GetService("Players").LocalPlayer.Name
 
+-- Main Window
 local MainWindow = Instance.new("Frame")
 MainWindow.Size = UDim2.new(0, 500, 0, 400)
 MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
-MainWindow.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainWindow.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainWindow.BackgroundTransparency = 0.1
+MainWindow.BorderSizePixel = 0
 MainWindow.Visible = false
 MainWindow.Active = true
 MainWindow.Draggable = true
 MainWindow.Parent = ScreenGui
 
+-- Gradient Background
+local Gradient = Instance.new("UIGradient")
+Gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
+}
+Gradient.Rotation = 45
+Gradient.Parent = MainWindow
+
+-- Corner Radius
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainWindow
 
+-- Shadow Effect
 local Shadow = Instance.new("Frame")
-Shadow.Size = MainWindow.Size + UDim2.new(0, 10, 0, 10)
-Shadow.Position = MainWindow.Position + UDim2.new(0, 5, 0, 5)
-Shadow.AnchorPoint = MainWindow.AnchorPoint
+Shadow.Size = UDim2.new(1, 15, 1, 15)
+Shadow.Position = UDim2.new(0, -7, 0, -7)
 Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.BackgroundTransparency = 0.5
-Shadow.ZIndex = 0
-Shadow.Parent = ScreenGui
+Shadow.BackgroundTransparency = 0.6
+Shadow.BorderSizePixel = 0
+Shadow.Parent = MainWindow
 
+local ShadowCorner = Instance.new("UICorner")
+ShadowCorner.CornerRadius = UDim.new(0, 12)
+ShadowCorner.Parent = Shadow
+
+-- Open Button
 local OpenButton = Instance.new("TextButton")
 OpenButton.Size = UDim2.new(0, 150, 0, 50)
-OpenButton.Position = UDim2.new(0, 20, 0, 20)
+OpenButton.Position = UDim2.new(0.5, 0, 0.85, 0)
+OpenButton.AnchorPoint = Vector2.new(0.5, 0.5)
 OpenButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 OpenButton.Text = "Open UI"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -39,39 +58,69 @@ OpenButton.TextSize = 18
 OpenButton.Parent = ScreenGui
 
 local OpenCorner = Instance.new("UICorner")
-OpenCorner.CornerRadius = UDim.new(0, 8)
+OpenCorner.CornerRadius = UDim.new(0, 10)
 OpenCorner.Parent = OpenButton
 
+-- Close Button
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 150, 0, 50)
-CloseButton.Position = UDim2.new(1, -160, 0, 20)
-CloseButton.AnchorPoint = Vector2.new(1, 0)
+CloseButton.Position = UDim2.new(0.5, 0, 0.95, 0)
+CloseButton.AnchorPoint = Vector2.new(0.5, 0.5)
 CloseButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 CloseButton.Text = "Close UI"
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.Font = Enum.Font.SourceSansBold
 CloseButton.TextSize = 18
-CloseButton.Visible = true
 CloseButton.Parent = MainWindow
 
 local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.CornerRadius = UDim.new(0, 10)
 CloseCorner.Parent = CloseButton
 
+-- Auto Parry Toggle Button
+local AutoParryButton = Instance.new("TextButton")
+AutoParryButton.Size = UDim2.new(0, 200, 0, 50)
+AutoParryButton.Position = UDim2.new(0.5, 0, 0.4, 0)
+AutoParryButton.AnchorPoint = Vector2.new(0.5, 0.5)
+AutoParryButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+AutoParryButton.Text = "Auto Parry: OFF"
+AutoParryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoParryButton.Font = Enum.Font.SourceSansBold
+AutoParryButton.TextSize = 18
+AutoParryButton.Parent = MainWindow
+
+local AutoParryCorner = Instance.new("UICorner")
+AutoParryCorner.CornerRadius = UDim.new(0, 10)
+AutoParryCorner.Parent = AutoParryButton
+
+local AutoParryEnabled = false
+
+AutoParryButton.MouseButton1Click:Connect(function()
+    AutoParryEnabled = not AutoParryEnabled
+    AutoParryButton.Text = AutoParryEnabled and "Auto Parry: ON" or "Auto Parry: OFF"
+
+    if AutoParryEnabled then
+        print("Auto Parry activated!") -- Replace this with your Auto Parry functionality.
+    else
+        print("Auto Parry deactivated!")
+    end
+end)
+
+-- UI Toggle Logic
 local UI_Toggled = false
 
 OpenButton.MouseButton1Click:Connect(function()
+    UI_Toggled = true
     MainWindow.Visible = true
     OpenButton.Visible = false
-    UI_Toggled = true
     TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.3}):Play()
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
+    UI_Toggled = false
     MainWindow.Visible = false
     OpenButton.Visible = true
-    UI_Toggled = false
-    TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.5}):Play()
+    TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.6}):Play()
 end)
 
 UserInputService.InputBegan:Connect(function(input, isProcessed)
@@ -83,8 +132,8 @@ UserInputService.InputBegan:Connect(function(input, isProcessed)
     end
 end)
 
-local dragging = false
-local dragInput, dragStart, startPos
+-- Draggable Functionality
+local dragging, dragInput, dragStart, startPos
 
 MainWindow.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -109,6 +158,11 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         local delta = input.Position - dragStart
-        MainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        MainWindow.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
