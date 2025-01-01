@@ -4,16 +4,19 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+-- Blur Effect
 local BlurEffect = Instance.new("BlurEffect")
 BlurEffect.Size = 0
 BlurEffect.Parent = Lighting
 
+-- ScreenGui
 local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.Name = "CompleteUI"
 ScreenGui.ResetOnSpawn = false
 
+-- Main Frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 600, 0, 400)
+MainFrame.Size = UDim2.new(0, 500, 0, 300) -- Shortened UI
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -25,8 +28,9 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
+-- Sidebar
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 150, 1, 0)
+Sidebar.Size = UDim2.new(0, 120, 1, 0) -- Adjusted for shorter UI
 Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = MainFrame
@@ -35,9 +39,10 @@ local SidebarCorner = Instance.new("UICorner")
 SidebarCorner.CornerRadius = UDim.new(0, 10)
 SidebarCorner.Parent = Sidebar
 
+-- Content Frame
 local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UDim2.new(1, -150, 1, 0)
-ContentFrame.Position = UDim2.new(0, 150, 0, 0)
+ContentFrame.Size = UDim2.new(1, -120, 1, 0) -- Adjusted for shorter UI
+ContentFrame.Position = UDim2.new(0, 120, 0, 0)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 ContentFrame.BorderSizePixel = 0
 ContentFrame.Parent = MainFrame
@@ -46,6 +51,29 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 10)
 ContentCorner.Parent = ContentFrame
 
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 50, 0, 25)
+CloseButton.Position = UDim2.new(1, -60, 0, 10)
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 18
+CloseButton.Parent = MainFrame
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseButton
+
+CloseButton.MouseButton1Click:Connect(function()
+    TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 0}):Play() -- Blur out
+    TweenService:Create(MainFrame, TweenInfo.new(0.5), {Transparency = 1}):Play() -- Fade out UI
+    wait(0.5)
+    ScreenGui:Destroy() -- Remove UI after fade
+end)
+
+-- Function to Create Tabs
 local function createTab(name)
     local TabButton = Instance.new("TextButton")
     TabButton.Size = UDim2.new(1, -10, 0, 40)
@@ -75,8 +103,8 @@ local function createTab(name)
     return TabContent
 end
 
+-- Example Tab: Auto Parry
 local AutoParryTab = createTab("Auto Parry")
-
 local AutoParryButton = Instance.new("TextButton")
 AutoParryButton.Size = UDim2.new(0, 200, 0, 50)
 AutoParryButton.Position = UDim2.new(0.5, 0, 0.3, 0)
@@ -103,48 +131,7 @@ AutoParryButton.MouseButton1Click:Connect(function()
     end
 end)
 
-local SliderTab = createTab("Settings")
-
-local SliderFrame = Instance.new("Frame")
-SliderFrame.Size = UDim2.new(0.8, 0, 0.1, 0)
-SliderFrame.Position = UDim2.new(0.1, 0, 0.3, 0)
-SliderFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-SliderFrame.Parent = SliderTab
-
-local SliderCorner = Instance.new("UICorner")
-SliderCorner.CornerRadius = UDim.new(0, 10)
-SliderCorner.Parent = SliderFrame
-
-local Slider = Instance.new("Frame")
-Slider.Size = UDim2.new(0.3, 0, 1, 0)
-Slider.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-Slider.Parent = SliderFrame
-
-local dragging = false
-
-Slider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-    end
-end)
-
-Slider.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-
-SliderFrame.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = game:GetService("UserInputService"):GetMouseLocation().X
-        local sliderPos = SliderFrame.AbsolutePosition.X
-        local sliderSize = SliderFrame.AbsoluteSize.X
-
-        local newScale = math.clamp((mousePos - sliderPos) / sliderSize, 0, 1)
-        Slider.Size = UDim2.new(newScale, 0, 1, 0)
-    end
-end)
-
+-- UI Dragging Logic
 local dragToggle, dragInput, dragStart, startPos
 
 MainFrame.InputBegan:Connect(function(input)
@@ -174,4 +161,5 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
+-- Add Blur Effect on Start
 TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 10}):Play()
