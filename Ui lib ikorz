@@ -4,14 +4,14 @@ local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauC
 -- Create Window
 local Library_Window = Library.Add_Window('Acceptions')
 
--- Create Tabs
-local Blatant_Tab = Library_Window.Create_Tab({
-    name = 'Blatant',
-    icon = 'rbxassetid://'
+-- Create "Auto Parry" Tab
+local AutoParry_Tab = Library_Window.Create_Tab({
+    name = 'Auto Parry',
+    icon = 'rbxassetid://' -- Add a valid icon ID if available
 })
 
 -- Create Section
-local Blatant_Section = Blatant_Tab.Create_Section()
+local AutoParry_Section = AutoParry_Tab.Create_Section()
 
 -- Variables
 local RunService = game:GetService("RunService")
@@ -22,6 +22,7 @@ local Cooldown = tick()
 local Parried = false
 local Connection = nil
 getgenv().AutoParryEnabled = false
+getgenv().AutoSpamEnabled = false
 getgenv().ParryMode = "Custom"
 
 -- Functions
@@ -68,12 +69,19 @@ local function detectAndTriggerParry()
     end
 end
 
+local function autoSpam()
+    while getgenv().AutoSpamEnabled do
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+        task.wait(0.1) -- Adjust the delay for spamming speed
+    end
+end
+
 -- UI: Auto Parry Toggle
-local Auto_Parry = Blatant_Section.Create_DropToggle({
-    name = 'Auto Parry',
+AutoParry_Section.Create_Toggle({
+    name = 'Enable Auto Parry',
     section = 'left',
     flag = 'Auto_Parry',
-    options = {'Custom', 'Random', 'Backwards'},
 
     callback = function(state)
         getgenv().AutoParryEnabled = state
@@ -82,9 +90,34 @@ local Auto_Parry = Blatant_Section.Create_DropToggle({
         else
             print("[INFO] Auto Parry Disabled")
         end
-    end,
+    end
+})
 
-    callback2 = function(selected)
+-- UI: Auto Spam Toggle
+AutoParry_Section.Create_Toggle({
+    name = 'Enable Auto Spam',
+    section = 'left',
+    flag = 'Auto_Spam',
+
+    callback = function(state)
+        getgenv().AutoSpamEnabled = state
+        if state then
+            print("[INFO] Auto Spam Enabled")
+            task.spawn(autoSpam) -- Start auto spam in a separate thread
+        else
+            print("[INFO] Auto Spam Disabled")
+        end
+    end
+})
+
+-- UI: Parry Mode Dropdown
+AutoParry_Section.Create_Dropdown({
+    name = 'Parry Mode',
+    section = 'left',
+    flag = 'Parry_Mode',
+    options = {'Custom', 'Random', 'Backwards'},
+
+    callback = function(selected)
         getgenv().ParryMode = selected
         print("[INFO] Parry Mode set to:", selected)
     end
@@ -97,4 +130,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("[INFO] Auto Parry Script Loaded with Cloud UI!")
+print("[INFO] Auto Parry Tab with Auto Spam Loaded Successfully!")
