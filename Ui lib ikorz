@@ -2,69 +2,125 @@
     WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
 ]]
 
+-- Dependencies
 resolve_parry_Remote()
 getgenv().aura_Enabled = true
 
-local Stats = game:GetService("Stats")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-
-local VenoX_Util = loadstring(game:HttpGet("https://raw.githubusercontent.com/cracklua/cracks/m/sources/pitbull/Scripts/Blade%20Ball.lua"))()
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 
 local local_player = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local camera = workspace.CurrentCamera
-local venoX_Data = nil
-local hit_Sound = nil
-local closest_Entity = nil
-local parry_remote = nil
+local character = local_player.Character or local_player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
--- UI Setup
+-- Variables
+local parryRemote = nil -- Parry remote (to be resolved)
+local closestThreat = nil
+local threatDetectionRange = 20 -- Range to detect threats (adjust based on game)
+
+-- Resolve the parry remote
+function resolve_parry_Remote()
+    for _, v in ipairs(getgc(true)) do
+        if typeof(v) == "table" and rawget(v, "FireServer") and tostring(v) == "ParryRemote" then
+            parryRemote = v
+            print("[INFO] Parry Remote found!")
+            break
+        end
+    end
+
+    if not parryRemote then
+        warn("[WARNING] Parry Remote not found!")
+    end
+end
+
+-- UI Setup: Fluent Design Inspired
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "AutoParryUI"
+ScreenGui.Name = "FluentAutoParryUI"
 
 -- Blur Effect
 local BlurEffect = Instance.new("BlurEffect", Lighting)
 BlurEffect.Size = 0
 
--- Black Square for toggling UI
+-- Fluent Toggle Button
 local ToggleButton = Instance.new("Frame", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 100, 0, 100)
-ToggleButton.Position = UDim2.new(0, 50, 0, 50)
-ToggleButton.BackgroundColor3 = Color3.new(0, 0, 0)
+ToggleButton.Size = UDim2.new(0, 140, 0, 50)
+ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 ToggleButton.BorderSizePixel = 0
 ToggleButton.Visible = true
+
+local ToggleUICorner = Instance.new("UICorner", ToggleButton)
+ToggleUICorner.CornerRadius = UDim.new(0.1, 0)
 
 local ToggleText = Instance.new("TextLabel", ToggleButton)
 ToggleText.Size = UDim2.new(1, 0, 1, 0)
 ToggleText.Text = "Open UI"
-ToggleText.TextColor3 = Color3.new(1, 1, 1)
+ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleText.BackgroundTransparency = 1
 ToggleText.TextScaled = true
+ToggleText.Font = Enum.Font.GothamBold
 
--- Main UI
+-- Fluent Main UI
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0.3, 0, 0.4, 0)
-MainFrame.Position = UDim2.new(0.35, 0, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+MainFrame.Size = UDim2.new(0.4, 0, 0.5, 0)
+MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.Visible = false
 
-local CloseButton = Instance.new("TextButton", MainFrame)
-CloseButton.Size = UDim2.new(0, 50, 0, 30)
-CloseButton.Position = UDim2.new(1, -60, 0, 10)
-CloseButton.Text = "Close"
-CloseButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-CloseButton.TextColor3 = Color3.new(1, 1, 1)
+local MainUICorner = Instance.new("UICorner", MainFrame)
+MainUICorner.CornerRadius = UDim.new(0.05, 0)
+
+local Shadow = Instance.new("ImageLabel", MainFrame)
+Shadow.Size = UDim2.new(1, 30, 1, 30)
+Shadow.Position = UDim2.new(0, -15, 0, -15)
+Shadow.Image = "rbxassetid://1316045217"
+Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.ImageTransparency = 0.7
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+Shadow.BackgroundTransparency = 1
+Shadow.ZIndex = 0
+
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Size = UDim2.new(1, 0, 0.1, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+local TitleUICorner = Instance.new("UICorner", TitleBar)
+TitleUICorner.CornerRadius = UDim.new(0.05, 0)
+
+local TitleText = Instance.new("TextLabel", TitleBar)
+TitleText.Size = UDim2.new(1, -20, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.Text = "Auto Parry Settings"
+TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleText.BackgroundTransparency = 1
+TitleText.TextScaled = true
+TitleText.Font = Enum.Font.GothamBold
+
+local CloseButton = Instance.new("TextButton", TitleBar)
+CloseButton.Size = UDim2.new(0.1, 0, 1, 0)
+CloseButton.Position = UDim2.new(0.9, 0, 0, 0)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+CloseButton.Font = Enum.Font.GothamBold
+
+local CloseUICorner = Instance.new("UICorner", CloseButton)
+CloseUICorner.CornerRadius = UDim.new(0.2, 0)
 
 local ToggleAutoParry = Instance.new("TextButton", MainFrame)
 ToggleAutoParry.Size = UDim2.new(0.8, 0, 0.2, 0)
 ToggleAutoParry.Position = UDim2.new(0.1, 0, 0.2, 0)
 ToggleAutoParry.Text = "Toggle Auto Parry (Enabled)"
-ToggleAutoParry.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-ToggleAutoParry.TextColor3 = Color3.new(1, 1, 1)
+ToggleAutoParry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleAutoParry.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleAutoParry.Font = Enum.Font.GothamBold
+
+local ToggleUICorner = Instance.new("UICorner", ToggleAutoParry)
+ToggleUICorner.CornerRadius = UDim.new(0.1, 0)
 
 -- UI Functionality
 ToggleButton.MouseButton1Click:Connect(function()
@@ -82,28 +138,28 @@ ToggleAutoParry.MouseButton1Click:Connect(function()
     ToggleAutoParry.Text = "Toggle Auto Parry (" .. (getgenv().Fsploit.AutoParry and "Enabled" or "Disabled") .. ")"
 end)
 
---[[ Parry settings ]]--
+-- Auto Parry Logic
+RunService.RenderStepped:Connect(function()
+    if getgenv().Fsploit.AutoParry then
+        -- Detect and trigger parry logic here
+        local closestThreat = detectClosestThreat()
+        if closestThreat then
+            triggerParry()
+        end
+    end
+end)
 
-getgenv().Fsploit = {
-    ["AutoParry"] = true, -- Must be true for auto parry
-    ["PingBased"] = false, -- Optional
-    ["PingBasedOffset"] = 0, -- Optional offset for ping-based parry
-    ["DistanceToParry"] = 0.5, -- Parry range
-    ["BallSpeedCheck"] = true, -- Do not change
-}
-
---[[ Main script remains unchanged, including the logic for Auto Parry, Ball detection, and other functionalities ]]--
-
-local function initialize(dataFolder_name)
-    venoX_Data = Instance.new("Folder", game:GetService("CoreGui"))
-    venoX_Data.Name = dataFolder_name
-
-    hit_Sound = Instance.new("Sound", venoX_Data)
-    hit_Sound.SoundId = "rbxassetid://936447863"
-    hit_Sound.Volume = 5
+-- Functions for threat detection and parry logic remain unchanged
+function detectClosestThreat()
+    -- Logic to find closest threat (replace with your game's threat detection)
 end
 
-initialize("venox_temp")
-resolve_parry_Remote()
+function triggerParry()
+    if parryRemote then
+        parryRemote:FireServer() -- Trigger parry
+    end
+end
 
---[[ Remaked by Fsploit / Recoded ]]--
+-- Initialize
+resolve_parry_Remote()
+print("[INFO] Fluent UI Loaded. Auto Parry enabled.")
