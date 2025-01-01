@@ -1,26 +1,28 @@
--- Load Kavo UI Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Auto Parry", "DarkTheme")
+-- Load Cloud Library
+local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua'))()
 
--- Tabs and Sections
-local MainTab = Window:NewTab("Main")
-local SettingsTab = Window:NewTab("Settings")
-local MainSection = MainTab:NewSection("Auto Parry")
-local SettingsSection = SettingsTab:NewSection("Settings")
+-- Create Window
+local Library_Window = Library.Add_Window('Acceptions')
 
--- Services
+-- Create Tabs
+local Blatant_Tab = Library_Window.Create_Tab({
+    name = 'Blatant',
+    icon = 'rbxassetid://'
+})
+
+-- Create Section
+local Blatant_Section = Blatant_Tab.Create_Section()
+
+-- Variables
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-
--- Variables
 local Player = Players.LocalPlayer
 local Cooldown = tick()
 local Parried = false
 local Connection = nil
-
 getgenv().AutoParryEnabled = false
-getgenv().DetectionRange = 50 -- Default detection range
+getgenv().ParryMode = "Custom"
 
 -- Functions
 local function GetBall()
@@ -66,6 +68,28 @@ local function detectAndTriggerParry()
     end
 end
 
+-- UI: Auto Parry Toggle
+local Auto_Parry = Blatant_Section.Create_DropToggle({
+    name = 'Auto Parry',
+    section = 'left',
+    flag = 'Auto_Parry',
+    options = {'Custom', 'Random', 'Backwards'},
+
+    callback = function(state)
+        getgenv().AutoParryEnabled = state
+        if state then
+            print("[INFO] Auto Parry Enabled")
+        else
+            print("[INFO] Auto Parry Disabled")
+        end
+    end,
+
+    callback2 = function(selected)
+        getgenv().ParryMode = selected
+        print("[INFO] Parry Mode set to:", selected)
+    end
+})
+
 -- Auto Parry Logic
 RunService.RenderStepped:Connect(function()
     if getgenv().AutoParryEnabled then
@@ -73,24 +97,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- UI Controls
-MainSection:NewToggle("Enable Auto Parry", "Toggle Auto Parry feature on/off.", function(state)
-    getgenv().AutoParryEnabled = state
-    if state then
-        print("[INFO] Auto Parry Enabled")
-    else
-        print("[INFO] Auto Parry Disabled")
-    end
-end)
-
-MainSection:NewSlider("Detection Range", "Set the range to detect incoming balls.", 100, 10, function(value)
-    getgenv().DetectionRange = value
-    print("[INFO] Detection Range set to: " .. value)
-end)
-
-SettingsSection:NewKeybind("Toggle UI", "Show/Hide the UI.", Enum.KeyCode.RightShift, function()
-    Library:ToggleUI()
-end)
-
--- Initialization Message
-print("[INFO] Auto Parry Script Loaded with Kavo UI!")
+print("[INFO] Auto Parry Script Loaded with Cloud UI!")
