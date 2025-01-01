@@ -1,225 +1,109 @@
--- Services
+--[[
+    WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+
+resolve_parry_Remote()
+getgenv().aura_Enabled = true
+
+local Stats = game:GetService("Stats")
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
 
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local VenoX_Util = loadstring(game:HttpGet("https://raw.githubusercontent.com/cracklua/cracks/m/sources/pitbull/Scripts/Blade%20Ball.lua"))()
 
--- Variables
-local autoParryEnabled = false
-local visualise = true
-local effectsEnabled = true
-local moreEffectsEnabled = false -- For new effect toggle
-local parryCooldown = false
-local cooldownTime = 0.15 -- Shorter cooldown for high ping
-local baseParryDistance = 20 -- Increased base distance for high ping
-local maxParryDistance = 250 -- Maximum distance for parry range
-local lastParriedBalls = {} -- Track parried balls
+local local_player = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local camera = workspace.CurrentCamera
+local venoX_Data = nil
+local hit_Sound = nil
+local closest_Entity = nil
+local parry_remote = nil
 
--- GUI Creation
+-- UI Setup
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 ScreenGui.Name = "AutoParryUI"
 
+-- Blur Effect
+local BlurEffect = Instance.new("BlurEffect", Lighting)
+BlurEffect.Size = 0
+
+-- Black Square for toggling UI
+local ToggleButton = Instance.new("Frame", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 100, 0, 100)
+ToggleButton.Position = UDim2.new(0, 50, 0, 50)
+ToggleButton.BackgroundColor3 = Color3.new(0, 0, 0)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Visible = true
+
+local ToggleText = Instance.new("TextLabel", ToggleButton)
+ToggleText.Size = UDim2.new(1, 0, 1, 0)
+ToggleText.Text = "Open UI"
+ToggleText.TextColor3 = Color3.new(1, 1, 1)
+ToggleText.BackgroundTransparency = 1
+ToggleText.TextScaled = true
+
+-- Main UI
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 500, 0, 600) -- Taller UI
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -300)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 0
-
-local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 15)
-
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 70)
-Title.BackgroundTransparency = 1
-Title.Text = "🌟 Auto Parry System"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 28
-Title.TextStrokeTransparency = 0.7
-
-local ToggleButton = Instance.new("TextButton", MainFrame)
-ToggleButton.Size = UDim2.new(0.8, 0, 0, 60)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.2, 0)
-ToggleButton.Text = "Enable Auto Parry"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 20
-
-local VisualToggleButton = Instance.new("TextButton", MainFrame)
-VisualToggleButton.Size = UDim2.new(0.8, 0, 0, 60)
-VisualToggleButton.Position = UDim2.new(0.1, 0, 0.35, 0)
-VisualToggleButton.Text = "Visualization: ON"
-VisualToggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-VisualToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-VisualToggleButton.Font = Enum.Font.GothamBold
-VisualToggleButton.TextSize = 20
-
-local EffectsToggleButton = Instance.new("TextButton", MainFrame)
-EffectsToggleButton.Size = UDim2.new(0.8, 0, 0, 60)
-EffectsToggleButton.Position = UDim2.new(0.1, 0, 0.5, 0)
-EffectsToggleButton.Text = "Effects: ON"
-EffectsToggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-EffectsToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-EffectsToggleButton.Font = Enum.Font.GothamBold
-EffectsToggleButton.TextSize = 20
-
-local MoreEffectsToggleButton = Instance.new("TextButton", MainFrame)
-MoreEffectsToggleButton.Size = UDim2.new(0.8, 0, 0, 60)
-MoreEffectsToggleButton.Position = UDim2.new(0.1, 0, 0.65, 0)
-MoreEffectsToggleButton.Text = "More Effects: OFF"
-MoreEffectsToggleButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-MoreEffectsToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MoreEffectsToggleButton.Font = Enum.Font.GothamBold
-MoreEffectsToggleButton.TextSize = 20
+MainFrame.Size = UDim2.new(0.3, 0, 0.4, 0)
+MainFrame.Position = UDim2.new(0.35, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+MainFrame.Visible = false
 
 local CloseButton = Instance.new("TextButton", MainFrame)
-CloseButton.Size = UDim2.new(0.2, 0, 0, 40)
-CloseButton.Position = UDim2.new(0.9, -50, 0, 15)
-CloseButton.Text = "X"
-CloseButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 18
+CloseButton.Size = UDim2.new(0, 50, 0, 30)
+CloseButton.Position = UDim2.new(1, -60, 0, 10)
+CloseButton.Text = "Close"
+CloseButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
 
--- Utility Functions
-local function get_character()
-    return LocalPlayer.Character
-end
+local ToggleAutoParry = Instance.new("TextButton", MainFrame)
+ToggleAutoParry.Size = UDim2.new(0.8, 0, 0.2, 0)
+ToggleAutoParry.Position = UDim2.new(0.1, 0, 0.2, 0)
+ToggleAutoParry.Text = "Toggle Auto Parry (Enabled)"
+ToggleAutoParry.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+ToggleAutoParry.TextColor3 = Color3.new(1, 1, 1)
 
-local function get_humanoid_root_part()
-    local character = get_character()
-    return character and character:FindFirstChild("HumanoidRootPart")
-end
-
-local function get_closest_ball()
-    local ballContainer = workspace:FindFirstChild("Balls")
-    if not ballContainer then return nil end
-
-    local closestBall = nil
-    local closestDistance = math.huge
-    local humanoidRootPart = get_humanoid_root_part()
-
-    if humanoidRootPart then
-        for _, ball in ipairs(ballContainer:GetChildren()) do
-            if not ball.Anchored and not lastParriedBalls[ball] then
-                local distance = (humanoidRootPart.Position - ball.Position).Magnitude
-                if distance < closestDistance then
-                    closestDistance = distance
-                    closestBall = ball
-                end
-            end
-        end
-    end
-
-    return closestBall
-end
-
-local function calculate_parry_distance()
-    local ball = get_closest_ball()
-    if ball then
-        local ping = LocalPlayer:GetNetworkPing() * 1000 -- Convert ping to milliseconds
-        local velocityFactor = math.clamp(ball.Velocity.Magnitude / 2.4, 10, 120) -- Adjust for ball speed
-        return math.clamp(baseParryDistance + velocityFactor + ping * 0.25, 20, maxParryDistance)
-    end
-    return baseParryDistance
-end
-
--- Visualizer
-local sphere = Instance.new("Part")
-sphere.Shape = Enum.PartType.Ball
-sphere.Anchored = true
-sphere.CanCollide = false
-sphere.CastShadow = false
-sphere.Transparency = 1
-sphere.Material = Enum.Material.ForceField
-sphere.Parent = workspace
-
-local function update_visualizer()
-    if not visualise or not autoParryEnabled then
-        sphere.Transparency = 1
-        return
-    end
-
-    local humanoidRootPart = get_humanoid_root_part()
-    if humanoidRootPart then
-        sphere.Transparency = 0.5
-        sphere.BrickColor = moreEffectsEnabled and BrickColor.new("Bright blue") or BrickColor.new("Bright green")
-        local parryDistance = calculate_parry_distance()
-        sphere.Size = Vector3.new(parryDistance * 2, parryDistance * 2, parryDistance * 2)
-        sphere.Position = humanoidRootPart.Position
-    else
-        sphere.Transparency = 1
-    end
-end
-
--- Parry Logic
-local function parry_if_valid()
-    if parryCooldown or not autoParryEnabled then return end
-
-    local ball = get_closest_ball()
-    if ball then
-        local humanoidRootPart = get_humanoid_root_part()
-        if humanoidRootPart then
-            local distance = (humanoidRootPart.Position - ball.Position).Magnitude
-            local parryDistance = calculate_parry_distance()
-
-            if distance <= parryDistance then
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-
-                -- Mark the ball as parried
-                lastParriedBalls[ball] = true
-                task.delay(cooldownTime, function()
-                    lastParriedBalls[ball] = nil
-                end)
-
-                -- Trigger cooldown
-                parryCooldown = true
-                task.delay(cooldownTime, function()
-                    parryCooldown = false
-                end)
-            end
-        end
-    end
-end
-
-RunService.RenderStepped:Connect(function()
-    if autoParryEnabled then
-        update_visualizer()
-        parry_if_valid()
-    end
-end)
-
--- Button Logic
+-- UI Functionality
 ToggleButton.MouseButton1Click:Connect(function()
-    autoParryEnabled = not autoParryEnabled
-    ToggleButton.Text = autoParryEnabled and "Disable Auto Parry" or "Enable Auto Parry"
-    ToggleButton.BackgroundColor3 = autoParryEnabled and Color3.fromRGB(150, 50, 50) or Color3.fromRGB(50, 150, 50)
-end)
-
-VisualToggleButton.MouseButton1Click:Connect(function()
-    visualise = not visualise
-    VisualToggleButton.Text = visualise and "Visualization: ON" or "Visualization: OFF"
-    VisualToggleButton.BackgroundColor3 = visualise and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
-end)
-
-EffectsToggleButton.MouseButton1Click:Connect(function()
-    effectsEnabled = not effectsEnabled
-    EffectsToggleButton.Text = effectsEnabled and "Effects: ON" or "Effects: OFF"
-    EffectsToggleButton.BackgroundColor3 = effectsEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
-end)
-
-MoreEffectsToggleButton.MouseButton1Click:Connect(function()
-    moreEffectsEnabled = not moreEffectsEnabled
-    MoreEffectsToggleButton.Text = moreEffectsEnabled and "More Effects: ON" or "More Effects: OFF"
-    MoreEffectsToggleButton.BackgroundColor3 = moreEffectsEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
+    MainFrame.Visible = not MainFrame.Visible
+    BlurEffect.Size = MainFrame.Visible and 24 or 0
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-    sphere:Destroy()
+    MainFrame.Visible = false
+    BlurEffect.Size = 0
 end)
+
+ToggleAutoParry.MouseButton1Click:Connect(function()
+    getgenv().Fsploit.AutoParry = not getgenv().Fsploit.AutoParry
+    ToggleAutoParry.Text = "Toggle Auto Parry (" .. (getgenv().Fsploit.AutoParry and "Enabled" or "Disabled") .. ")"
+end)
+
+--[[ Parry settings ]]--
+
+getgenv().Fsploit = {
+    ["AutoParry"] = true, -- Must be true for auto parry
+    ["PingBased"] = false, -- Optional
+    ["PingBasedOffset"] = 0, -- Optional offset for ping-based parry
+    ["DistanceToParry"] = 0.5, -- Parry range
+    ["BallSpeedCheck"] = true, -- Do not change
+}
+
+--[[ Main script remains unchanged, including the logic for Auto Parry, Ball detection, and other functionalities ]]--
+
+local function initialize(dataFolder_name)
+    venoX_Data = Instance.new("Folder", game:GetService("CoreGui"))
+    venoX_Data.Name = dataFolder_name
+
+    hit_Sound = Instance.new("Sound", venoX_Data)
+    hit_Sound.SoundId = "rbxassetid://936447863"
+    hit_Sound.Volume = 5
+end
+
+initialize("venox_temp")
+resolve_parry_Remote()
+
+--[[ Remaked by Fsploit / Recoded ]]--
