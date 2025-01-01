@@ -1,32 +1,23 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/skills-introduction-to-github/main/Ui%20lib%20ikorz", true))()
 
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "Ikorz UI"
+ScreenGui.ResetOnSpawn = false
+
 local Window = Library:CreateWindow("Created by Ikorz")
 local BladeBallTab = Window:CreateTab("Blade Ball")
 local AutoParryEnabled = false
 
--- Set the UI to CoreGui to prevent it from closing after death
-if not game:GetService("CoreGui"):FindFirstChild("ScreenGuiName") then
-    Library.ScreenGui.Parent = game:GetService("CoreGui")
+local function activateAutoParry()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
 end
 
 BladeBallTab:CreateToggle("Auto Parry", function(state)
     AutoParryEnabled = state
     if state then
-        pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
-        end)
+        activateAutoParry()
     end
 end)
 
-game:GetService("RunService").RenderStepped:Connect(function()
-    if AutoParryEnabled then
-        local Balls = workspace:FindFirstChild("Balls")
-        if Balls then
-            for _, ball in ipairs(Balls:GetChildren()) do
-                if ball:IsA("BasePart") and (ball.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 10 then
-                    -- Additional Auto Parry logic can be added here
-                end
-            end
-        end
-    end
-end)
+BladeBallTab:CreateLabel("UI Created by Ikorz")
