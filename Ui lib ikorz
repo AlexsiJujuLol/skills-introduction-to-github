@@ -2,16 +2,14 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 
--- Add Blur Effect
 local BlurEffect = Instance.new("BlurEffect")
 BlurEffect.Size = 0
 BlurEffect.Parent = Lighting
 
 local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Name = game:GetService("Players").LocalPlayer.Name
+ScreenGui.Name = "SexyUILib"
 
--- Main Window
 local MainWindow = Instance.new("Frame")
 MainWindow.Size = UDim2.new(0, 500, 0, 400)
 MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -24,7 +22,6 @@ MainWindow.Active = true
 MainWindow.Draggable = true
 MainWindow.Parent = ScreenGui
 
--- Gradient Background
 local Gradient = Instance.new("UIGradient")
 Gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
@@ -33,12 +30,10 @@ Gradient.Color = ColorSequence.new{
 Gradient.Rotation = 45
 Gradient.Parent = MainWindow
 
--- Corner Radius
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainWindow
 
--- Shadow Effect
 local Shadow = Instance.new("Frame")
 Shadow.Size = UDim2.new(1, 15, 1, 15)
 Shadow.Position = UDim2.new(0, -7, 0, -7)
@@ -51,7 +46,6 @@ local ShadowCorner = Instance.new("UICorner")
 ShadowCorner.CornerRadius = UDim.new(0, 12)
 ShadowCorner.Parent = Shadow
 
--- Open Button
 local OpenButton = Instance.new("TextButton")
 OpenButton.Size = UDim2.new(0, 150, 0, 50)
 OpenButton.Position = UDim2.new(0.5, 0, 0.85, 0)
@@ -67,7 +61,6 @@ local OpenCorner = Instance.new("UICorner")
 OpenCorner.CornerRadius = UDim.new(0, 10)
 OpenCorner.Parent = OpenButton
 
--- Close Button
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 150, 0, 50)
 CloseButton.Position = UDim2.new(0.5, 0, 0.95, 0)
@@ -83,7 +76,6 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 10)
 CloseCorner.Parent = CloseButton
 
--- Auto Parry Toggle Button
 local AutoParryButton = Instance.new("TextButton")
 AutoParryButton.Size = UDim2.new(0, 200, 0, 50)
 AutoParryButton.Position = UDim2.new(0.5, 0, 0.4, 0)
@@ -106,15 +98,10 @@ AutoParryButton.MouseButton1Click:Connect(function()
     AutoParryButton.Text = AutoParryEnabled and "Auto Parry: ON" or "Auto Parry: OFF"
 
     if AutoParryEnabled then
-        -- Load and execute the Auto Parry script
         loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
-        print("Auto Parry activated!") -- Optional for debugging
-    else
-        print("Auto Parry deactivated!") -- Optional for debugging
     end
 end)
 
--- UI Toggle Logic
 local UI_Toggled = false
 
 OpenButton.MouseButton1Click:Connect(function()
@@ -122,9 +109,7 @@ OpenButton.MouseButton1Click:Connect(function()
     MainWindow.Visible = true
     OpenButton.Visible = false
 
-    -- Tween to activate blur
     TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 10}):Play()
-
     TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.3}):Play()
 end)
 
@@ -133,9 +118,7 @@ CloseButton.MouseButton1Click:Connect(function()
     MainWindow.Visible = false
     OpenButton.Visible = true
 
-    -- Tween to deactivate blur
     TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 0}):Play()
-
     TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.6}):Play()
 end)
 
@@ -146,12 +129,10 @@ UserInputService.InputBegan:Connect(function(input, isProcessed)
         MainWindow.Visible = UI_Toggled
         OpenButton.Visible = not UI_Toggled
 
-        -- Blur Effect toggle
         TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = UI_Toggled and 10 or 0}):Play()
     end
 end)
 
--- Draggable Functionality
 local dragging, dragInput, dragStart, startPos
 
 MainWindow.InputBegan:Connect(function(input)
