@@ -27,7 +27,7 @@ getgenv().VisualColor = Color3.fromRGB(255, 0, 0)
 getgenv().VisualTransparency = 0.6
 local VisualIndicator -- Part for the visual range
 
--- Enable/Disable Auto Parry
+-- Enable/Disable Auto Parry Toggle
 AutoParry_Section.Create_Toggle({
     name = 'Enable Auto Parry',
     flag = 'Auto_Parry',
