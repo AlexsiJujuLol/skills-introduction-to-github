@@ -15,17 +15,17 @@ local parryCooldown = false
 local cooldownTime = 0.2 -- Cooldown to prevent double parry
 local lastParriedBalls = {} -- Track parried balls
 
--- Create GUI
+-- GUI Creation
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 ScreenGui.Name = "AutoParryUI"
 
 -- Blur Effect
 local Blur = Instance.new("BlurEffect", game.Lighting)
-Blur.Size = 0
+Blur.Size = 15
 Blur.Enabled = false
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 500, 0, 400) -- Increased size
+MainFrame.Size = UDim2.new(0, 500, 0, 400) -- Larger UI
 MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 0
@@ -34,7 +34,7 @@ local UICorner = Instance.new("UICorner", MainFrame)
 UICorner.CornerRadius = UDim.new(0, 15)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 70) -- Adjusted size
+Title.Size = UDim2.new(1, 0, 0, 70)
 Title.BackgroundTransparency = 1
 Title.Text = "🌟 Auto Parry System"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -89,7 +89,7 @@ local function get_humanoid_root_part()
 end
 
 local function get_ball()
-    local ballContainer = workspace:FindFirstChild("Balls")
+    local ballContainer = workspace:FindFirstChild("Balls") -- Ensure "Balls" is correct
     if not ballContainer then return nil end
 
     for _, ball in ipairs(ballContainer:GetChildren()) do
@@ -117,7 +117,7 @@ sphere.Shape = Enum.PartType.Ball
 sphere.Anchored = true
 sphere.CanCollide = false
 sphere.CastShadow = false
-sphere.Transparency = 1 -- Start invisible
+sphere.Transparency = 1
 sphere.Material = Enum.Material.ForceField
 sphere.Parent = workspace
 
@@ -177,7 +177,9 @@ local function parry_if_valid()
 
                 -- Mark the ball as parried
                 lastParriedBalls[ball] = true
-                Debris:AddItem(ball, cooldownTime)
+                task.delay(cooldownTime, function()
+                    lastParriedBalls[ball] = nil
+                end)
 
                 -- Trigger cooldown
                 parryCooldown = true
@@ -212,15 +214,4 @@ end)
 EffectsToggleButton.MouseButton1Click:Connect(function()
     effectsEnabled = not effectsEnabled
     EffectsToggleButton.Text = effectsEnabled and "Effects: ON" or "Effects: OFF"
-    EffectsToggleButton.BackgroundColor3 = effectsEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
-end)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-    sphere:Destroy()
-    Blur.Enabled = false
-end)
-
--- Enable Blur Effect when UI is active
-Blur.Size = 15
-Blur.Enabled = true
+    EffectsToggleButton.BackgroundColor3 = effectsEnabled and Color3.fromRGB(50, 150,
