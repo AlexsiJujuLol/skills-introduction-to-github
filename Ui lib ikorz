@@ -20,8 +20,8 @@ local Visual_Section = Visual_Tab.Create_Section()
 -- Global Variables
 getgenv().AutoParryEnabled = false
 getgenv().Mode = "Close Range"
-getgenv().CloseRangeSettings = { DetectionRange = 15, ParryTiming = 0.2 }
-getgenv().HighRangeSettings = { DetectionRange = 40, ParryTiming = 0.5 }
+getgenv().ParryDelay = 0.2 -- Default delay
+getgenv().DetectionRange = 15 -- Default range
 getgenv().VisualEnabled = true
 getgenv().VisualColor = Color3.fromRGB(255, 0, 0)
 getgenv().VisualTransparency = 0.6
@@ -50,28 +50,27 @@ AutoParry_Section.Create_Dropdown({
     end
 })
 
--- Close Range Slider
+-- Parry Delay Slider
 AutoParry_Section.Create_Slider({
-    name = 'Close Range Detection',
-    min = 10,
-    max = 30,
-    default = getgenv().CloseRangeSettings.DetectionRange,
+    name = 'Parry Delay',
+    min = 0.1,
+    max = 1.0,
+    default = getgenv().ParryDelay,
     callback = function(value)
-        getgenv().CloseRangeSettings.DetectionRange = value
-        print("[INFO] Close Range Detection set to: " .. value)
-        updateVisualIndicator(getgenv().VisualEnabled)
+        getgenv().ParryDelay = value
+        print("[INFO] Parry Delay set to: " .. value)
     end
 })
 
--- High Range Slider
+-- Detection Range Slider
 AutoParry_Section.Create_Slider({
-    name = 'High Range Detection',
-    min = 30,
-    max = 60,
-    default = getgenv().HighRangeSettings.DetectionRange,
+    name = 'Detection Range',
+    min = 10,
+    max = 50,
+    default = getgenv().DetectionRange,
     callback = function(value)
-        getgenv().HighRangeSettings.DetectionRange = value
-        print("[INFO] High Range Detection set to: " .. value)
+        getgenv().DetectionRange = value
+        print("[INFO] Detection Range set to: " .. value)
         updateVisualIndicator(getgenv().VisualEnabled)
     end
 })
@@ -146,18 +145,7 @@ function updateVisualIndicator(state)
     local HRP = detectHumanoidRootPart()
     if not HRP then return end
 
-    local range = getgenv().CloseRangeSettings.DetectionRange
-    if getgenv().Mode == "High Range" then
-        range = getgenv().HighRangeSettings.DetectionRange
-    elseif getgenv().Mode == "Auto" then
-        local Ball = detectBall()
-        if Ball then
-            local distance = (HRP.Position - Ball.Position).Magnitude
-            range = distance <= 20 and getgenv().CloseRangeSettings.DetectionRange or getgenv().HighRangeSettings.DetectionRange
-        end
-    end
-
-    VisualIndicator.Size = Vector3.new(range * 2, 1, range * 2)
+    VisualIndicator.Size = Vector3.new(getgenv().DetectionRange * 2, 1, getgenv().DetectionRange * 2)
     VisualIndicator.Position = HRP.Position - Vector3.new(0, 3, 0)
     VisualIndicator.Transparency = getgenv().VisualTransparency
     VisualIndicator.Color = getgenv().VisualColor
@@ -188,21 +176,11 @@ game:GetService("RunService").RenderStepped:Connect(function()
     local Ball, HRP = detectBall(), detectHumanoidRootPart()
     if not Ball or not HRP then return end
 
-    local settings = (getgenv().Mode == "Close Range" and getgenv().CloseRangeSettings) or
-                     (getgenv().Mode == "High Range" and getgenv().HighRangeSettings) or nil
-
-    if getgenv().Mode == "Auto" then
-        local distance = (HRP.Position - Ball.Position).Magnitude
-        if distance <= 20 then
-            settings = getgenv().CloseRangeSettings
-        else
-            settings = getgenv().HighRangeSettings
-        end
-    end
-
+    -- Calculate Parry based on delay and range
     local Speed = Ball.Velocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
-    if Distance / Speed <= settings.ParryTiming then
+
+    if Distance <= getgenv().DetectionRange and Distance / Speed <= getgenv().ParryDelay then
         triggerParry()
     end
 end)
