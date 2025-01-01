@@ -1,106 +1,210 @@
 local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua'))()
-local Library_Window = Library.Add_Window('Acceptions')
 
+local Library_Window = Library.Add_Window('Auto Parry Settings')
+
+-- Tabs
 local AutoParry_Tab = Library_Window.Create_Tab({
     name = 'Auto Parry',
     icon = 'rbxassetid://'
 })
 
+local Visual_Tab = Library_Window.Create_Tab({
+    name = 'Visual',
+    icon = 'rbxassetid://'
+})
+
+-- Sections
 local AutoParry_Section = AutoParry_Tab.Create_Section()
+local Visual_Section = Visual_Tab.Create_Section()
 
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local Player = Players.LocalPlayer
-local Cooldown = tick()
-local Parried = false
-local Connection = nil
+-- Global Variables
 getgenv().AutoParryEnabled = false
-getgenv().AutoSpamEnabled = false
-getgenv().SpamSpeed = 0.5
+getgenv().Mode = "Close Range"
+getgenv().CloseRangeSettings = { DetectionRange = 15, ParryTiming = 0.2 }
+getgenv().HighRangeSettings = { DetectionRange = 40, ParryTiming = 0.5 }
+getgenv().VisualEnabled = true
+getgenv().VisualColor = Color3.fromRGB(255, 0, 0)
+getgenv().VisualTransparency = 0.6
+local VisualIndicator -- Part for the visual range
 
-local function GetBall()
-    for _, Ball in ipairs(workspace.Balls:GetChildren()) do
-        if Ball:GetAttribute("realBall") then
-            return Ball
-        end
-    end
-end
-
-local function ResetConnection()
-    if Connection then
-        Connection:Disconnect()
-        Connection = nil
-    end
-end
-
-workspace.Balls.ChildAdded:Connect(function()
-    local Ball = GetBall()
-    if not Ball then return end
-    ResetConnection()
-    Connection = Ball:GetAttributeChangedSignal("target"):Connect(function()
-        Parried = false
-    end)
-end)
-
-local function detectAndTriggerParry()
-    local Ball, HRP = GetBall(), Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if not Ball or not HRP then return end
-    local Speed = Ball.zoomies.VectorVelocity.Magnitude
-    local Distance = (HRP.Position - Ball.Position).Magnitude
-    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance / Speed <= 0.55 then
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        Parried = true
-        Cooldown = tick()
-    end
-    if (tick() - Cooldown) >= 1 then
-        Parried = false
-    end
-end
-
-local function autoSpam()
-    while getgenv().AutoSpamEnabled do
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-        task.wait(getgenv().SpamSpeed)
-    end
-end
-
+-- Enable/Disable Auto Parry
 AutoParry_Section.Create_Toggle({
     name = 'Enable Auto Parry',
-    section = 'left',
     flag = 'Auto_Parry',
     callback = function(state)
         getgenv().AutoParryEnabled = state
+        print("[INFO] Auto Parry is " .. (state and "Enabled" or "Disabled"))
+        updateVisualIndicator(getgenv().VisualEnabled)
     end
 })
 
-AutoParry_Section.Create_Toggle({
-    name = 'Enable Auto Spam',
-    section = 'left',
-    flag = 'Auto_Spam',
+-- Parry Mode Dropdown
+AutoParry_Section.Create_Dropdown({
+    name = 'Parry Mode',
+    flag = 'Parry_Mode',
+    options = { 'Close Range', 'High Range', 'Auto' },
+    callback = function(mode)
+        getgenv().Mode = mode
+        print("[INFO] Parry Mode set to: " .. mode)
+        updateVisualIndicator(getgenv().VisualEnabled)
+    end
+})
+
+-- Close Range Slider
+AutoParry_Section.Create_Slider({
+    name = 'Close Range Detection',
+    min = 10,
+    max = 30,
+    default = getgenv().CloseRangeSettings.DetectionRange,
+    callback = function(value)
+        getgenv().CloseRangeSettings.DetectionRange = value
+        print("[INFO] Close Range Detection set to: " .. value)
+        updateVisualIndicator(getgenv().VisualEnabled)
+    end
+})
+
+-- High Range Slider
+AutoParry_Section.Create_Slider({
+    name = 'High Range Detection',
+    min = 30,
+    max = 60,
+    default = getgenv().HighRangeSettings.DetectionRange,
+    callback = function(value)
+        getgenv().HighRangeSettings.DetectionRange = value
+        print("[INFO] High Range Detection set to: " .. value)
+        updateVisualIndicator(getgenv().VisualEnabled)
+    end
+})
+
+-- Visual Toggle
+Visual_Section.Create_Toggle({
+    name = 'Enable Visuals',
+    flag = 'Visual_Enabled',
     callback = function(state)
-        getgenv().AutoSpamEnabled = state
-        if state then
-            task.spawn(autoSpam)
+        getgenv().VisualEnabled = state
+        print("[INFO] Visuals are " .. (state and "Enabled" or "Disabled"))
+        updateVisualIndicator(state)
+    end
+})
+
+-- Visual Color Picker
+Visual_Section.Create_ColorPicker({
+    name = 'Visual Color',
+    default = getgenv().VisualColor,
+    callback = function(color)
+        getgenv().VisualColor = color
+        print("[INFO] Visual Color set to:", color)
+        if VisualIndicator then
+            VisualIndicator.Color = color
         end
     end
 })
 
-AutoParry_Section.Create_Slider({
-    name = 'Spam Speed',
-    section = 'left',
-    min = 0.1,
+-- Visual Transparency Slider
+Visual_Section.Create_Slider({
+    name = 'Visual Transparency',
+    min = 0,
     max = 1,
-    default = 0.5,
-    decimals = 2,
+    default = getgenv().VisualTransparency,
     callback = function(value)
-        getgenv().SpamSpeed = value
+        getgenv().VisualTransparency = value
+        print("[INFO] Visual Transparency set to:", value)
+        if VisualIndicator then
+            VisualIndicator.Transparency = value
+        end
     end
 })
 
-RunService.RenderStepped:Connect(function()
-    if getgenv().AutoParryEnabled then
-        detectAndTriggerParry()
+-- Visual Logic
+function createVisualIndicator()
+    if VisualIndicator then
+        VisualIndicator:Destroy()
+    end
+
+    VisualIndicator = Instance.new("Part")
+    VisualIndicator.Size = Vector3.new(1, 1, 1)
+    VisualIndicator.Anchored = true
+    VisualIndicator.CanCollide = false
+    VisualIndicator.Transparency = getgenv().VisualTransparency
+    VisualIndicator.Color = getgenv().VisualColor
+    VisualIndicator.Material = Enum.Material.Neon
+    VisualIndicator.Parent = workspace
+end
+
+function updateVisualIndicator(state)
+    if not state then
+        if VisualIndicator then
+            VisualIndicator.Transparency = 1 -- Hide indicator
+        end
+        return
+    end
+
+    if not VisualIndicator then
+        createVisualIndicator()
+    end
+
+    local HRP = detectHumanoidRootPart()
+    if not HRP then return end
+
+    local range = getgenv().CloseRangeSettings.DetectionRange
+    if getgenv().Mode == "High Range" then
+        range = getgenv().HighRangeSettings.DetectionRange
+    elseif getgenv().Mode == "Auto" then
+        local Ball = detectBall()
+        if Ball then
+            local distance = (HRP.Position - Ball.Position).Magnitude
+            range = distance <= 20 and getgenv().CloseRangeSettings.DetectionRange or getgenv().HighRangeSettings.DetectionRange
+        end
+    end
+
+    VisualIndicator.Size = Vector3.new(range * 2, 1, range * 2)
+    VisualIndicator.Position = HRP.Position - Vector3.new(0, 3, 0)
+    VisualIndicator.Transparency = getgenv().VisualTransparency
+    VisualIndicator.Color = getgenv().VisualColor
+end
+
+-- Helper Functions
+function detectBall()
+    for _, ball in ipairs(workspace:GetChildren()) do
+        if ball:IsA("BasePart") and ball.Name == "Ball" then
+            return ball
+        end
+    end
+end
+
+function detectHumanoidRootPart()
+    return game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+end
+
+function triggerParry()
+    print("[INFO] Parry Triggered!")
+    -- Add the actual parry trigger logic here
+end
+
+-- Auto Parry Logic
+game:GetService("RunService").RenderStepped:Connect(function()
+    if not getgenv().AutoParryEnabled then return end
+
+    local Ball, HRP = detectBall(), detectHumanoidRootPart()
+    if not Ball or not HRP then return end
+
+    local settings = (getgenv().Mode == "Close Range" and getgenv().CloseRangeSettings) or
+                     (getgenv().Mode == "High Range" and getgenv().HighRangeSettings) or nil
+
+    if getgenv().Mode == "Auto" then
+        local distance = (HRP.Position - Ball.Position).Magnitude
+        if distance <= 20 then
+            settings = getgenv().CloseRangeSettings
+        else
+            settings = getgenv().HighRangeSettings
+        end
+    end
+
+    local Speed = Ball.Velocity.Magnitude
+    local Distance = (HRP.Position - Ball.Position).Magnitude
+    if Distance / Speed <= settings.ParryTiming then
+        triggerParry()
     end
 end)
+
+createVisualIndicator() -- Initial visual
