@@ -1,11 +1,22 @@
-local url = "https://raw.githubusercontent.com/AlexsiJujuLol/skills-introduction-to-github/main/README.md"
-local response = game:HttpGet(url, true)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/skills-introduction-to-github/main/Ui%20lib%20ikorz", true))()
 
--- Attempt to execute the response as Lua code
-local success, err = pcall(function()
-    loadstring(response)()
+local Window = Library:CreateWindow("Created by Ikorz")
+local BladeBallTab = Window:CreateTab("Blade Ball")
+local AutoParryEnabled = false
+
+BladeBallTab:CreateToggle("Auto Parry", function(state)
+    AutoParryEnabled = state
 end)
 
-if not success then
-    print("Error executing the script:", err)
-end
+game:GetService("RunService").RenderStepped:Connect(function()
+    if AutoParryEnabled then
+        local Balls = workspace:FindFirstChild("Balls")
+        if Balls then
+            for _, ball in ipairs(Balls:GetChildren()) do
+                if ball:IsA("BasePart") and (ball.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 10 then
+                    -- Auto parry logic
+                end
+            end
+        end
+    end
+end)
