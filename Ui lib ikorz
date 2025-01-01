@@ -37,95 +37,97 @@ function resolve_parry_Remote()
 end
 
 -- UI Setup: Fluent Design Inspired
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "FluentAutoParryUI"
-ScreenGui.Enabled = false -- UI starts hidden
+if not UserInputService.TouchEnabled then -- Skip UI setup on mobile devices
+    local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+    ScreenGui.Name = "FluentAutoParryUI"
+    ScreenGui.Enabled = false -- UI starts hidden
 
--- Blur Effect
-local BlurEffect = Instance.new("BlurEffect", Lighting)
-BlurEffect.Size = 0
-
--- Fluent Main UI
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0.4, 0, 0.5, 0)
-MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-
-local MainUICorner = Instance.new("UICorner", MainFrame)
-MainUICorner.CornerRadius = UDim.new(0.05, 0)
-
-local Shadow = Instance.new("ImageLabel", MainFrame)
-Shadow.Size = UDim2.new(1, 30, 1, 30)
-Shadow.Position = UDim2.new(0, -15, 0, -15)
-Shadow.Image = "rbxassetid://1316045217"
-Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.ImageTransparency = 0.7
-Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-Shadow.BackgroundTransparency = 1
-Shadow.ZIndex = 0
-
-local TitleBar = Instance.new("Frame", MainFrame)
-TitleBar.Size = UDim2.new(1, 0, 0.1, 0)
-TitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-
-local TitleUICorner = Instance.new("UICorner", TitleBar)
-TitleUICorner.CornerRadius = UDim.new(0.05, 0)
-
-local TitleText = Instance.new("TextLabel", TitleBar)
-TitleText.Size = UDim2.new(1, -20, 1, 0)
-TitleText.Position = UDim2.new(0, 10, 0, 0)
-TitleText.Text = "Auto Parry Settings"
-TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleText.BackgroundTransparency = 1
-TitleText.TextScaled = true
-TitleText.Font = Enum.Font.GothamBold
-
-local CloseButton = Instance.new("TextButton", TitleBar)
-CloseButton.Size = UDim2.new(0.1, 0, 1, 0)
-CloseButton.Position = UDim2.new(0.9, 0, 0, 0)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-CloseButton.Font = Enum.Font.GothamBold
-
-local CloseUICorner = Instance.new("UICorner", CloseButton)
-CloseUICorner.CornerRadius = UDim.new(0.2, 0)
-
-local ToggleAutoParry = Instance.new("TextButton", MainFrame)
-ToggleAutoParry.Size = UDim2.new(0.8, 0, 0.2, 0)
-ToggleAutoParry.Position = UDim2.new(0.1, 0, 0.2, 0)
-ToggleAutoParry.Text = "Toggle Auto Parry (Enabled)"
-ToggleAutoParry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-ToggleAutoParry.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleAutoParry.Font = Enum.Font.GothamBold
-
-local ToggleUICorner = Instance.new("UICorner", ToggleAutoParry)
-ToggleUICorner.CornerRadius = UDim.new(0.1, 0)
-
--- UI Functionality
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = false
+    -- Blur Effect
+    local BlurEffect = Instance.new("BlurEffect", Lighting)
     BlurEffect.Size = 0
-    isUIToggled = false
-end)
 
-ToggleAutoParry.MouseButton1Click:Connect(function()
-    getgenv().Fsploit.AutoParry = not getgenv().Fsploit.AutoParry
-    ToggleAutoParry.Text = "Toggle Auto Parry (" .. (getgenv().Fsploit.AutoParry and "Enabled" or "Disabled") .. ")"
-end)
+    -- Fluent Main UI
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.new(0.4, 0, 0.5, 0)
+    MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 
--- Hotkey to toggle UI
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+    local MainUICorner = Instance.new("UICorner", MainFrame)
+    MainUICorner.CornerRadius = UDim.new(0.05, 0)
 
-    -- Toggle UI with the "F" key (change if needed)
-    if input.KeyCode == Enum.KeyCode.F then
-        isUIToggled = not isUIToggled
-        ScreenGui.Enabled = isUIToggled
-        BlurEffect.Size = isUIToggled and 24 or 0
-    end
-end)
+    local Shadow = Instance.new("ImageLabel", MainFrame)
+    Shadow.Size = UDim2.new(1, 30, 1, 30)
+    Shadow.Position = UDim2.new(0, -15, 0, -15)
+    Shadow.Image = "rbxassetid://1316045217"
+    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    Shadow.ImageTransparency = 0.7
+    Shadow.ScaleType = Enum.ScaleType.Slice
+    Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    Shadow.BackgroundTransparency = 1
+    Shadow.ZIndex = 0
+
+    local TitleBar = Instance.new("Frame", MainFrame)
+    TitleBar.Size = UDim2.new(1, 0, 0.1, 0)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+    local TitleUICorner = Instance.new("UICorner", TitleBar)
+    TitleUICorner.CornerRadius = UDim.new(0.05, 0)
+
+    local TitleText = Instance.new("TextLabel", TitleBar)
+    TitleText.Size = UDim2.new(1, -20, 1, 0)
+    TitleText.Position = UDim2.new(0, 10, 0, 0)
+    TitleText.Text = "Auto Parry Settings"
+    TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleText.BackgroundTransparency = 1
+    TitleText.TextScaled = true
+    TitleText.Font = Enum.Font.GothamBold
+
+    local CloseButton = Instance.new("TextButton", TitleBar)
+    CloseButton.Size = UDim2.new(0.1, 0, 1, 0)
+    CloseButton.Position = UDim2.new(0.9, 0, 0, 0)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    CloseButton.Font = Enum.Font.GothamBold
+
+    local CloseUICorner = Instance.new("UICorner", CloseButton)
+    CloseUICorner.CornerRadius = UDim.new(0.2, 0)
+
+    local ToggleAutoParry = Instance.new("TextButton", MainFrame)
+    ToggleAutoParry.Size = UDim2.new(0.8, 0, 0.2, 0)
+    ToggleAutoParry.Position = UDim2.new(0.1, 0, 0.2, 0)
+    ToggleAutoParry.Text = "Toggle Auto Parry (Enabled)"
+    ToggleAutoParry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    ToggleAutoParry.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleAutoParry.Font = Enum.Font.GothamBold
+
+    local ToggleUICorner = Instance.new("UICorner", ToggleAutoParry)
+    ToggleUICorner.CornerRadius = UDim.new(0.1, 0)
+
+    -- UI Functionality
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui.Enabled = false
+        BlurEffect.Size = 0
+        isUIToggled = false
+    end)
+
+    ToggleAutoParry.MouseButton1Click:Connect(function()
+        getgenv().Fsploit.AutoParry = not getgenv().Fsploit.AutoParry
+        ToggleAutoParry.Text = "Toggle Auto Parry (" .. (getgenv().Fsploit.AutoParry and "Enabled" or "Disabled") .. ")"
+    end)
+
+    -- Hotkey to toggle UI
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+
+        -- Toggle UI with the "F" key (change if needed)
+        if input.KeyCode == Enum.KeyCode.F then
+            isUIToggled = not isUIToggled
+            ScreenGui.Enabled = isUIToggled
+            BlurEffect.Size = isUIToggled and 24 or 0
+        end
+    end)
+end
 
 -- Auto Parry Logic
 RunService.RenderStepped:Connect(function()
@@ -151,4 +153,4 @@ end
 
 -- Initialize
 resolve_parry_Remote()
-print("[INFO] Fluent UI Loaded. Auto Parry enabled. Press 'F' to toggle the UI.")
+print("[INFO] Fluent UI Loaded. Auto Parry enabled. UI hidden on mobile.")
