@@ -1,9 +1,9 @@
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+
 local LocalPlayer = Players.LocalPlayer
 
 -- Blur Effect
@@ -11,7 +11,7 @@ local BlurEffect = Instance.new("BlurEffect")
 BlurEffect.Size = 0
 BlurEffect.Parent = Lighting
 
--- ScreenGui
+-- Screen GUI
 local ScreenGui = Instance.new("ScreenGui", gethui and gethui() or LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.Name = "CompleteUI"
 ScreenGui.ResetOnSpawn = false
@@ -24,7 +24,6 @@ MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BackgroundTransparency = 0.2
 MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -65,7 +64,6 @@ CloseButton.Text = "X"
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.Font = Enum.Font.SourceSansBold
 CloseButton.TextSize = 18
-CloseButton.BackgroundTransparency = 0.2
 CloseButton.Parent = MainFrame
 
 local CloseCorner = Instance.new("UICorner")
@@ -78,7 +76,6 @@ local function createTab(name)
     TabButton.Size = UDim2.new(1, -10, 0, 40)
     TabButton.Position = UDim2.new(0, 5, 0, (#Sidebar:GetChildren() - 1) * 45)
     TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    TabButton.BackgroundTransparency = 0.2
     TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     TabButton.Font = Enum.Font.SourceSansBold
     TabButton.TextSize = 16
@@ -110,61 +107,54 @@ AutoParryButton.Size = UDim2.new(0, 200, 0, 50)
 AutoParryButton.Position = UDim2.new(0.5, 0, 0.3, 0)
 AutoParryButton.AnchorPoint = Vector2.new(0.5, 0.5)
 AutoParryButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-AutoParryButton.BackgroundTransparency = 0.2
 AutoParryButton.Text = "Auto Parry: OFF"
 AutoParryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 AutoParryButton.Font = Enum.Font.SourceSansBold
 AutoParryButton.TextSize = 18
 AutoParryButton.Parent = AutoParryTab
 
-local AutoParryCorner = Instance.new("UICorner")
-AutoParryCorner.CornerRadius = UDim.new(0, 10)
-AutoParryCorner.Parent = AutoParryButton
-
 local AutoParryEnabled = false
 local AutoParryConnection
 
--- Function to Create Visualizer
-local function createVisualizer()
-    local sphere = Instance.new("Part")
-    sphere.Shape = Enum.PartType.Ball
-    sphere.Anchored = true
-    sphere.CanCollide = false
-    sphere.CastShadow = false
-    sphere.Transparency = 1
-    sphere.Material = Enum.Material.ForceField
-    sphere.Parent = workspace
-
-    local hue = 0
-
-    local function updateVisualizer()
-        local char = LocalPlayer.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then
-            sphere.Transparency = 1
-            return
+-- Function to Detect Ball
+local function getBall()
+    local ballContainer = workspace:FindFirstChild("Balls")
+    if ballContainer then
+        for _, ball in pairs(ballContainer:GetChildren()) do
+            if not ball.Anchored then
+                return ball
+            end
         end
-
-        sphere.Transparency = 0.5
-        sphere.Position = hrp.Position
-        sphere.Size = Vector3.new(30, 30, 30)
-
-        hue = (hue + 0.01) % 1
-        sphere.Color = Color3.fromHSV(hue, 1, 1)
     end
-
-    RunService.RenderStepped:Connect(updateVisualizer)
+    return nil
 end
 
+-- Check if Ball is Within Parry Range
+local function isBallInRange(ball)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp and ball then
+        local distance = (hrp.Position - ball.Position).Magnitude
+        return distance <= 20 -- Adjust the range as needed
+    end
+    return false
+end
+
+-- Auto Parry Logic
+local function attemptParry()
+    local ball = getBall()
+    if ball and isBallInRange(ball) then
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+    end
+end
+
+-- Enable/Disable Auto Parry
 AutoParryButton.MouseButton1Click:Connect(function()
     AutoParryEnabled = not AutoParryEnabled
     AutoParryButton.Text = AutoParryEnabled and "Auto Parry: ON" or "Auto Parry: OFF"
 
     if AutoParryEnabled then
-        createVisualizer()
-        AutoParryConnection = RunService.Heartbeat:Connect(function()
-            -- Add your auto-parry logic here
-        end)
+        AutoParryConnection = RunService.Heartbeat:Connect(attemptParry)
     else
         if AutoParryConnection then
             AutoParryConnection:Disconnect()
@@ -175,10 +165,8 @@ end)
 
 -- Close Button Logic
 CloseButton.MouseButton1Click:Connect(function()
-    if AutoParryEnabled and AutoParryConnection then
+    if AutoParryConnection then
         AutoParryConnection:Disconnect()
-        AutoParryConnection = nil
-        AutoParryEnabled = false
     end
 
     TweenService:Create(MainFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
