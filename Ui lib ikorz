@@ -150,7 +150,3 @@ OpenButton.MouseButton1Click:Connect(function()
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
-    MainWindow.Visible = false
-    OpenButton.Visible = true
-    TweenService:Create(Shadow, TweenInfo.new(0.3), {BackgroundTransparency = 0.5}):Play()
-end)
