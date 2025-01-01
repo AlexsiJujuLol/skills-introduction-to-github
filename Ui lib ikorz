@@ -100,9 +100,11 @@ AutoParryButton.MouseButton1Click:Connect(function()
     AutoParryButton.Text = AutoParryEnabled and "Auto Parry: ON" or "Auto Parry: OFF"
 
     if AutoParryEnabled then
-        print("Auto Parry activated!") -- Replace this with your Auto Parry functionality.
+        -- Load and execute the Auto Parry script
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
+        print("Auto Parry activated!") -- Optional for debugging
     else
-        print("Auto Parry deactivated!")
+        print("Auto Parry deactivated!") -- Optional for debugging
     end
 end)
 
