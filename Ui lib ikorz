@@ -97,20 +97,30 @@ local function get_humanoid_root_part()
     return char and char:FindFirstChild("HumanoidRootPart")
 end
 
-local function get_ball()
+local function get_closest_ball()
     local ballContainer = workspace:FindFirstChild("Balls")
     if not ballContainer then return nil end
 
-    for _, v in pairs(ballContainer:GetChildren()) do
-        if not v.Anchored then
-            return v
+    local humanoidRootPart = get_humanoid_root_part()
+    if not humanoidRootPart then return nil end
+
+    local closestBall = nil
+    local shortestDistance = math.huge
+
+    for _, ball in pairs(ballContainer:GetChildren()) do
+        if not ball.Anchored then
+            local distance = (humanoidRootPart.Position - ball.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                closestBall = ball
+            end
         end
     end
-    return nil
+    return closestBall
 end
 
 local function calculate_parry_distance()
-    local ball = get_ball()
+    local ball = get_closest_ball()
     if ball then
         local ping = get_player():GetNetworkPing() * 20
         local baseDistance = 15
@@ -148,23 +158,25 @@ local function update_visualizer()
     sphere.Position = humanoidRootPart.Position
 end
 
--- Parry Logic with Cooldown
-local function parry_if_valid(ball)
-    if ball and autoParryEnabled and not parryCooldown then
-        local humanoidRootPart = get_humanoid_root_part()
-        if humanoidRootPart then
-            local distance = (humanoidRootPart.Position - ball.Position).Magnitude
-            if distance <= sphere.Size.X / 2 then
-                -- Trigger Parry
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+-- Parry Logic with Cooldown and Closest Ball
+local function parry_if_valid()
+    if not autoParryEnabled or parryCooldown then return end
 
-                -- Activate Cooldown
-                parryCooldown = true
-                task.delay(cooldownTime, function()
-                    parryCooldown = false
-                end)
-            end
+    local ball = get_closest_ball()
+    local humanoidRootPart = get_humanoid_root_part()
+
+    if ball and humanoidRootPart then
+        local distance = (humanoidRootPart.Position - ball.Position).Magnitude
+        if distance <= sphere.Size.X / 2 then
+            -- Trigger Parry
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+
+            -- Activate Cooldown
+            parryCooldown = true
+            task.delay(cooldownTime, function()
+                parryCooldown = false
+            end)
         end
     end
 end
@@ -172,7 +184,7 @@ end
 RunService.RenderStepped:Connect(function()
     if autoParryEnabled then
         update_visualizer()
-        parry_if_valid(get_ball())
+        parry_if_valid()
     end
 end)
 
