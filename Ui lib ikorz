@@ -61,11 +61,17 @@ RunService.Heartbeat:Connect(function()
 
     -- Check if the ball is targeting the player and is within range and reaction time
     if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime then
-        -- Ensure the parry trigger happens
+        -- Simulate the mouse button event (parry action)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        
+        -- Simulate a physical deflection of the ball (apply a force to it)
+        local Direction = (Ball.Position - HRP.Position).unit
+        local Force = 500 -- Adjust the force as needed
+        Ball:ApplyImpulse(Direction * Force)
+        
         Parried = true
         Cooldown = tick() -- Update cooldown after parrying
-        print("Parry triggered!")
+        print("Parry triggered and ball deflected!")
     end
 
     -- Reset the parry after the cooldown
