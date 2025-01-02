@@ -7,7 +7,7 @@ local Window = Ikorz:CreateWindow({
     SubTitle = "by dawid",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = false, -- Disable the blur effect
+    Acrylic = false,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
@@ -26,10 +26,12 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
-local ReactionTime = 1.99  -- Updated reaction time in seconds
-local DetectionRange = 10    -- Detection range in studs
+local ReactionTime = 1.99
+local DetectionRange = 10
 local Cooldown = tick()
 local Parried = false
+local ParryForce = 500
+local CooldownTime = 0.2
 
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
@@ -59,27 +61,18 @@ RunService.Heartbeat:Connect(function()
     local Distance = (HRP.Position - Ball.Position).Magnitude
     local TimeToReach = Distance / BallVelocity
 
-    -- Ensure the ball is coming towards the player and is within a valid detection range
     local BallDirection = (Ball.Position - HRP.Position).Unit
     local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
 
-    -- Only trigger the parry if the ball is in range, coming towards the player, and within the reaction time window
     if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime and BallToPlayerDotProduct > 0 then
-        -- Simulate the mouse button event (parry action)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        
-        -- Simulate a physical deflection of the ball (apply a force to it)
         local Direction = (Ball.Position - HRP.Position).unit
-        local Force = 500 -- Adjust the force as needed
-        Ball:ApplyImpulse(Direction * Force)
-        
+        Ball:ApplyImpulse(Direction * ParryForce)
         Parried = true
-        Cooldown = tick() -- Update cooldown after parrying
-        print("Parry triggered and ball deflected!")
+        Cooldown = tick()
     end
 
-    -- Reset the parry after the cooldown
-    if (tick() - Cooldown) >= 0.2 then
+    if (tick() - Cooldown) >= CooldownTime then
         Parried = false
     end
 end)
@@ -94,6 +87,50 @@ AutoParryToggle:OnChanged(function()
         print("Auto Parry Disabled!")
     end
 end)
+
+Tabs.Settings:AddSlider("ReactionTimeSlider", {
+    Title = "Reaction Time",
+    Min = 0.1,
+    Max = 5,
+    Default = ReactionTime,
+    Callback = function(value)
+        ReactionTime = value
+        print("Reaction Time set to: " .. value .. " seconds")
+    end
+})
+
+Tabs.Settings:AddSlider("DetectionRangeSlider", {
+    Title = "Detection Range",
+    Min = 5,
+    Max = 20,
+    Default = DetectionRange,
+    Callback = function(value)
+        DetectionRange = value
+        print("Detection Range set to: " .. value .. " studs")
+    end
+})
+
+Tabs.Settings:AddSlider("ParryForceSlider", {
+    Title = "Parry Force",
+    Min = 100,
+    Max = 1000,
+    Default = ParryForce,
+    Callback = function(value)
+        ParryForce = value
+        print("Parry Force set to: " .. value)
+    end
+})
+
+Tabs.Settings:AddSlider("CooldownTimeSlider", {
+    Title = "Cooldown Time",
+    Min = 0.1,
+    Max = 1,
+    Default = CooldownTime,
+    Callback = function(value)
+        CooldownTime = value
+        print("Cooldown Time set to: " .. value .. " seconds")
+    end
+})
 
 SaveManager:SetLibrary(Ikorz)
 InterfaceManager:SetLibrary(Ikorz)
