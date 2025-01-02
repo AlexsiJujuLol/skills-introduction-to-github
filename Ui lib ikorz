@@ -7,7 +7,7 @@ local Window = Ikorz:CreateWindow({
     SubTitle = "by dawid",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = false,  -- Disable the blur effect
+    Acrylic = false, -- Disable the blur effect
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
@@ -60,11 +60,13 @@ RunService.Heartbeat:Connect(function()
     local TimeToReach = Distance / BallVelocity
 
     if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime then
+        -- Ensure the mouse event triggers at the right time for parrying
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         Parried = true
-        Cooldown = tick()
+        Cooldown = tick() -- Update the cooldown after a successful parry
     end
 
+    -- Reset parry state after cooldown
     if (tick() - Cooldown) >= 0.2 then
         Parried = false
     end
