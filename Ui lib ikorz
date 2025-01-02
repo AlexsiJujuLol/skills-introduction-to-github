@@ -1,102 +1,101 @@
+local Ikorz = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Ikorz:CreateWindow({
+    Title = "Ikorz",
+    SubTitle = "by dawid",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
+    BladeBal = Window:AddTab({ Title = "Blade Bal", Icon = "sword" })
+}
+
+local Options = Ikorz.Options
+
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
-local ParryDelay = 0.3
-local ParryCooldown = 0.8
-local DetectionRange = 40
+local ReactionTime = 0.15
+local DetectionRange = 5
 local Cooldown = tick()
 local Parried = false
-local Connection = nil
 
-local function GetBall()
+local function GetClosestBall()
+    local closestBall, closestDistance = nil, math.huge
     for _, Ball in ipairs(workspace.Balls:GetChildren()) do
         if Ball:GetAttribute("realBall") then
-            return Ball
+            local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+            if HRP then
+                local Distance = (HRP.Position - Ball.Position).Magnitude
+                if Distance < closestDistance then
+                    closestDistance = Distance
+                    closestBall = Ball
+                end
+            end
         end
     end
+    return closestBall
 end
 
-local function ResetConnection()
-    if Connection then
-        Connection:Disconnect()
-        Connection = nil
-    end
-end
-
-workspace.Balls.ChildAdded:Connect(function()
-    local Ball = GetBall()
-    if not Ball then return end
-    ResetConnection()
-    Connection = Ball:GetAttributeChangedSignal("target"):Connect(function()
-        Parried = false
-    end)
-end)
-
-RunService.PreSimulation:Connect(function()
+RunService.Heartbeat:Connect(function()
     if not AutoParryEnabled then return end
 
-    local Ball = GetBall()
+    local Ball = GetClosestBall()
     local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-
     if not Ball or not HRP then return end
 
-    local Speed = Ball.zoomies.VectorVelocity.Magnitude
+    local BallVelocity = Ball.Velocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
+    local TimeToReach = Distance / BallVelocity
 
-    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and Distance / Speed <= ParryDelay then
+    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime then
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         Parried = true
         Cooldown = tick()
     end
 
-    if (tick() - Cooldown) >= ParryCooldown then
+    if (tick() - Cooldown) >= 0.2 then
         Parried = false
     end
 end)
 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauCloud/Byte/refs/heads/main/Utils/Library.lua"))()
-local Window = Library.Add_Window("Auto Parry Settings")
+local AutoParryToggle = Tabs.BladeBal:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
 
-local AutoParryTab = Window.Create_Tab({ name = "Auto Parry" })
-local AutoParrySection = AutoParryTab.Create_Section()
-
-AutoParrySection.Create_Toggle({
-    name = "Enable Auto Parry",
-    flag = "AutoParryToggle",
-    callback = function(state)
-        AutoParryEnabled = state
+AutoParryToggle:OnChanged(function()
+    AutoParryEnabled = AutoParryToggle.Value
+    if AutoParryEnabled then
+        print("Auto Parry Enabled!")
+    else
+        print("Auto Parry Disabled!")
     end
+end)
+
+SaveManager:SetLibrary(Ikorz)
+InterfaceManager:SetLibrary(Ikorz)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("IkorzScriptHub")
+SaveManager:SetFolder("IkorzScriptHub/specific-game")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+
+Ikorz:Notify({
+    Title = "Ikorz",
+    Content = "The script has been loaded.",
+    Duration = 8
 })
 
-AutoParrySection.Create_Slider({
-    name = "Parry Delay",
-    min = 0.1,
-    max = 1.0,
-    default = 0.3,
-    callback = function(value)
-        ParryDelay = value
-    end
-})
-
-AutoParrySection.Create_Slider({
-    name = "Detection Range",
-    min = 10,
-    max = 100,
-    default = 40,
-    callback = function(value)
-        DetectionRange = value
-    end
-})
-
-AutoParrySection.Create_Slider({
-    name = "Parry Cooldown",
-    min = 0.5,
-    max = 2.0,
-    default = 0.8,
-    callback = function(value)
-        ParryCooldown = value
-    end
-})
+SaveManager:LoadAutoloadConfig()
