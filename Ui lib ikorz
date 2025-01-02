@@ -27,7 +27,7 @@ local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
 local ReactionTime = 0.15
-local DetectionRange = 5
+local DetectionRange = 10  -- Changed detection range to 10
 local Cooldown = tick()
 local Parried = false
 
