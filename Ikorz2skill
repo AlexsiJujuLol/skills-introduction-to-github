@@ -1,23 +1,2 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/skills-introduction-to-github/main/Ui%20lib%20ikorz", true))()
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/skills-introduction-to-github/main/Ui%20lib%20ikorz", true))()
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.Name = "Ikorz UI"
-ScreenGui.ResetOnSpawn = false
-
-local Window = Library:CreateWindow("Created by Ikorz")
-local BladeBallTab = Window:CreateTab("Blade Ball")
-local AutoParryEnabled = false
-
-local function activateAutoParry()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexsiJujuLol/AlexsiJujuLol/main/ikorzButsimple", true))()
-end
-
-BladeBallTab:CreateToggle("Auto Parry", function(state)
-    AutoParryEnabled = state
-    if state then
-        activateAutoParry()
-    end
-end)
-
-BladeBallTab:CreateLabel("UI Created by Ikorz")
