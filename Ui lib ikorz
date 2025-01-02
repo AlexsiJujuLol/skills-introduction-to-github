@@ -7,7 +7,7 @@ local Window = Ikorz:CreateWindow({
     SubTitle = "by dawid",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
+    Acrylic = false,  -- Disable the blur effect
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
