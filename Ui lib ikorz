@@ -18,11 +18,10 @@ local Tabs = {
     BladeBal = Window:AddTab({ Title = "Blade Bal", Icon = "sword" })
 }
 
-local Options = Ikorz.Options
-
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
@@ -32,6 +31,8 @@ local Cooldown = tick()
 local Parried = false
 local ParryForce = 500
 local CooldownTime = 0.2
+
+local BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote")
 
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
@@ -68,8 +69,11 @@ RunService.Heartbeat:Connect(function()
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         local Direction = (Ball.Position - HRP.Position).unit
         Ball:ApplyImpulse(Direction * ParryForce)
+        
         Parried = true
         Cooldown = tick()
+        
+        BladeBallRemote:FireServer(Ball)
     end
 
     if (tick() - Cooldown) >= CooldownTime then
