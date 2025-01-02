@@ -4,7 +4,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 local Window = Ikorz:CreateWindow({
     Title = "Ikorz",
-    SubTitle = "by dawid",
+    SubTitle = "by ur dad Ikorz",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = false,
@@ -25,15 +25,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
-local VisualEnabled = false
 local ReactionTime = 1.99
 local DetectionRange = 10
 local Cooldown = tick()
 local Parried = false
 local ParryForce = 500
 local CooldownTime = 0.2
-
+local SpamLevel = 1
 local BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote")
+local ParryPredictionCircle = nil
 
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
@@ -52,16 +52,20 @@ local function GetClosestBall()
     return closestBall
 end
 
-local function DrawVisual(ball)
-    if not VisualEnabled then return end
-    if ball and ball:IsA("BasePart") then
-        local highlight = Instance.new("SelectionBox")
-        highlight.Adornee = ball
-        highlight.Parent = ball
-        highlight.LineThickness = 0.1
-        highlight.Color3 = Color3.fromRGB(255, 0, 0)
-        game:GetService("Debris"):AddItem(highlight, 0.5)
+local function CreatePredictionCircle(position)
+    if ParryPredictionCircle then
+        ParryPredictionCircle:Destroy()
     end
+
+    ParryPredictionCircle = Instance.new("Part")
+    ParryPredictionCircle.Shape = Enum.PartType.Ball
+    ParryPredictionCircle.Size = Vector3.new(4, 0.1, 4)
+    ParryPredictionCircle.Position = position
+    ParryPredictionCircle.Anchored = true
+    ParryPredictionCircle.CanCollide = false
+    ParryPredictionCircle.Material = Enum.Material.Neon
+    ParryPredictionCircle.Color = Color3.fromRGB(0, 255, 0)
+    ParryPredictionCircle.Parent = workspace
 end
 
 RunService.Heartbeat:Connect(function()
@@ -74,20 +78,23 @@ RunService.Heartbeat:Connect(function()
     local BallVelocity = Ball.Velocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
     local TimeToReach = Distance / BallVelocity
-
     local BallDirection = (Ball.Position - HRP.Position).Unit
     local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
 
-    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime and BallToPlayerDotProduct > 0 then
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+    if BallToPlayerDotProduct > 0 then
+        CreatePredictionCircle(Ball.Position)
+    end
 
-        local Direction = (Ball.Position - HRP.Position).unit
-        Ball:ApplyImpulse(Direction * ParryForce)
+    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime and BallToPlayerDotProduct > 0 then
+        for i = 1, SpamLevel do
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            local Direction = (Ball.Position - HRP.Position).unit
+            Ball:ApplyImpulse(Direction * ParryForce)
+        end
         Parried = true
         Cooldown = tick()
-        
+
         BladeBallRemote:FireServer(Ball)
-        DrawVisual(Ball)
     end
 
     if (tick() - Cooldown) >= CooldownTime then
@@ -96,14 +103,25 @@ RunService.Heartbeat:Connect(function()
 end)
 
 local AutoParryToggle = Tabs.BladeBal:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
+
 AutoParryToggle:OnChanged(function()
     AutoParryEnabled = AutoParryToggle.Value
+    if AutoParryEnabled then
+        print("Auto Parry Enabled!")
+    else
+        print("Auto Parry Disabled!")
+    end
 end)
 
-local VisualToggle = Tabs.BladeBal:AddToggle("VisualToggle", { Title = "Enable Visuals", Default = false })
-VisualToggle:OnChanged(function()
-    VisualEnabled = VisualToggle.Value
-end)
+local SpamLevelToggle = Tabs.BladeBal:AddDropdown("SpamLevelToggle", {
+    Title = "Spam Level",
+    Default = 1,
+    Values = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" },
+    Callback = function(value)
+        SpamLevel = tonumber(value)
+        print("Spam Level set to: " .. SpamLevel)
+    end
+})
 
 Tabs.Settings:AddSlider("ReactionTimeSlider", {
     Title = "Reaction Time",
@@ -112,6 +130,7 @@ Tabs.Settings:AddSlider("ReactionTimeSlider", {
     Default = ReactionTime,
     Callback = function(value)
         ReactionTime = value
+        print("Reaction Time set to: " .. value .. " seconds")
     end
 })
 
@@ -122,6 +141,7 @@ Tabs.Settings:AddSlider("DetectionRangeSlider", {
     Default = DetectionRange,
     Callback = function(value)
         DetectionRange = value
+        print("Detection Range set to: " .. value .. " studs")
     end
 })
 
@@ -132,6 +152,7 @@ Tabs.Settings:AddSlider("ParryForceSlider", {
     Default = ParryForce,
     Callback = function(value)
         ParryForce = value
+        print("Parry Force set to: " .. value)
     end
 })
 
@@ -142,6 +163,7 @@ Tabs.Settings:AddSlider("CooldownTimeSlider", {
     Default = CooldownTime,
     Callback = function(value)
         CooldownTime = value
+        print("Cooldown Time set to: " .. value .. " seconds")
     end
 })
 
@@ -158,7 +180,7 @@ Window:SelectTab(1)
 
 Ikorz:Notify({
     Title = "Ikorz",
-    Content = "Script loaded successfully.",
+    Content = "The script has been loaded.",
     Duration = 8
 })
 
