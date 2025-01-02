@@ -1,9 +1,7 @@
--- Load Fluent GUI Libraries
 local Ikorz = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
--- Create the GUI Window
 local Window = Ikorz:CreateWindow({
     Title = "Ikorz",
     SubTitle = "by dawid",
@@ -14,15 +12,12 @@ local Window = Ikorz:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- Define Tabs
 local Tabs = {
     Main = Window:AddTab({ Title = "Main" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
-    BladeBal = Window:AddTab({ Title = "Blade Bal", Icon = "sword" }),
-    Visual = Window:AddTab({ Title = "Visual", Icon = "eye" }) -- Added for visual feedback
+    BladeBal = Window:AddTab({ Title = "Blade Bal", Icon = "sword" })
 }
 
--- Services and Variables
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -30,7 +25,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
-local VisualEnabled = false -- Visual toggle
+local VisualEnabled = false
 local ReactionTime = 1.99
 local DetectionRange = 10
 local Cooldown = tick()
@@ -38,10 +33,8 @@ local Parried = false
 local ParryForce = 500
 local CooldownTime = 0.2
 
--- BladeBallRemote Reference
 local BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote")
 
--- Function to get the closest ball
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
     for _, Ball in ipairs(workspace.Balls:GetChildren()) do
@@ -59,7 +52,6 @@ local function GetClosestBall()
     return closestBall
 end
 
--- Draw Visuals for Auto Parry
 local function DrawVisual(ball)
     if not VisualEnabled then return end
     if ball and ball:IsA("BasePart") then
@@ -72,7 +64,6 @@ local function DrawVisual(ball)
     end
 end
 
--- Auto Parry Logic
 RunService.Heartbeat:Connect(function()
     if not AutoParryEnabled then return end
 
@@ -95,34 +86,25 @@ RunService.Heartbeat:Connect(function()
         Parried = true
         Cooldown = tick()
         
-        -- Trigger Blade Ball Remote
         BladeBallRemote:FireServer(Ball)
-
-        -- Draw Visual
         DrawVisual(Ball)
     end
 
-    -- Reset Parry Cooldown
     if (tick() - Cooldown) >= CooldownTime then
         Parried = false
     end
 end)
 
--- Add Auto Parry Toggle
 local AutoParryToggle = Tabs.BladeBal:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
 AutoParryToggle:OnChanged(function()
     AutoParryEnabled = AutoParryToggle.Value
-    print("Auto Parry: " .. (AutoParryEnabled and "Enabled" or "Disabled"))
 end)
 
--- Add Visual Toggle in Visual Tab
-local VisualToggle = Tabs.Visual:AddToggle("VisualToggle", { Title = "Enable Visuals", Default = false })
+local VisualToggle = Tabs.BladeBal:AddToggle("VisualToggle", { Title = "Enable Visuals", Default = false })
 VisualToggle:OnChanged(function()
     VisualEnabled = VisualToggle.Value
-    print("Visuals: " .. (VisualEnabled and "Enabled" or "Disabled"))
 end)
 
--- Add Sliders for Settings
 Tabs.Settings:AddSlider("ReactionTimeSlider", {
     Title = "Reaction Time",
     Min = 0.1,
@@ -130,7 +112,6 @@ Tabs.Settings:AddSlider("ReactionTimeSlider", {
     Default = ReactionTime,
     Callback = function(value)
         ReactionTime = value
-        print("Reaction Time set to: " .. value)
     end
 })
 
@@ -141,7 +122,6 @@ Tabs.Settings:AddSlider("DetectionRangeSlider", {
     Default = DetectionRange,
     Callback = function(value)
         DetectionRange = value
-        print("Detection Range set to: " .. value)
     end
 })
 
@@ -152,7 +132,6 @@ Tabs.Settings:AddSlider("ParryForceSlider", {
     Default = ParryForce,
     Callback = function(value)
         ParryForce = value
-        print("Parry Force set to: " .. value)
     end
 })
 
@@ -163,11 +142,9 @@ Tabs.Settings:AddSlider("CooldownTimeSlider", {
     Default = CooldownTime,
     Callback = function(value)
         CooldownTime = value
-        print("Cooldown Time set to: " .. value)
     end
 })
 
--- Final Setup for Save/Load
 SaveManager:SetLibrary(Ikorz)
 InterfaceManager:SetLibrary(Ikorz)
 SaveManager:IgnoreThemeSettings()
@@ -177,15 +154,12 @@ SaveManager:SetFolder("IkorzScriptHub/specific-game")
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
--- Default Tab Selection
 Window:SelectTab(1)
 
--- Notify Script Loaded
 Ikorz:Notify({
     Title = "Ikorz",
     Content = "Script loaded successfully.",
     Duration = 8
 })
 
--- Load Configuration
 SaveManager:LoadAutoloadConfig()
