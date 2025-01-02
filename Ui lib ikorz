@@ -26,8 +26,8 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
-local ReactionTime = 1.75  -- Reaction time in seconds
-local DetectionRange = 10   -- Detection range in studs
+local ReactionTime = 1.8905  -- Updated reaction time in seconds
+local DetectionRange = 10    -- Detection range in studs
 local Cooldown = tick()
 local Parried = false
 
@@ -59,8 +59,12 @@ RunService.Heartbeat:Connect(function()
     local Distance = (HRP.Position - Ball.Position).Magnitude
     local TimeToReach = Distance / BallVelocity
 
-    -- Check if the ball is targeting the player and is within range and reaction time
-    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime then
+    -- Ensure the ball is coming towards the player and is within a valid detection range
+    local BallDirection = (Ball.Position - HRP.Position).Unit
+    local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
+
+    -- Only trigger the parry if the ball is in range, coming towards the player, and within the reaction time window
+    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime and BallToPlayerDotProduct > 0 then
         -- Simulate the mouse button event (parry action)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         
