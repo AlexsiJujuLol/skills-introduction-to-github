@@ -34,6 +34,7 @@ local CooldownTime = 0.2
 
 local BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote")
 
+-- Function to get the closest ball
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
     for _, Ball in ipairs(workspace.Balls:GetChildren()) do
@@ -60,10 +61,15 @@ RunService.Heartbeat:Connect(function()
 
     local BallVelocity = Ball.Velocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
-    local TimeToReach = Distance / BallVelocity
+    local TimeToReach = Distance / (BallVelocity > 0 and BallVelocity or 1)
 
     local BallDirection = (Ball.Position - HRP.Position).Unit
     local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
+
+    print("Ball Velocity: " .. BallVelocity)
+    print("Ball Distance: " .. Distance)
+    print("Time to Reach: " .. TimeToReach)
+    print("Ball to Player Dot Product: " .. BallToPlayerDotProduct)
 
     if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime and BallToPlayerDotProduct > 0 then
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
@@ -83,11 +89,18 @@ end)
 
 local AutoParryToggle = Tabs.BladeBal:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
 
+-- Create a label to show Auto Parry status visually
+local AutoParryStatusLabel = Tabs.BladeBal:AddLabel("AutoParryStatusLabel", { Title = "Auto Parry Status: Disabled", TextSize = 18, TextColor = Color3.fromRGB(255, 0, 0) })
+
 AutoParryToggle:OnChanged(function()
     AutoParryEnabled = AutoParryToggle.Value
     if AutoParryEnabled then
+        AutoParryStatusLabel:SetTitle("Auto Parry Status: Enabled")
+        AutoParryStatusLabel:SetTextColor(Color3.fromRGB(0, 255, 0))  -- Green color when enabled
         print("Auto Parry Enabled!")
     else
+        AutoParryStatusLabel:SetTitle("Auto Parry Status: Disabled")
+        AutoParryStatusLabel:SetTextColor(Color3.fromRGB(255, 0, 0))  -- Red color when disabled
         print("Auto Parry Disabled!")
     end
 end)
