@@ -26,7 +26,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
 
 local AutoParryEnabled = false
-local ReactionTime = 1.8905  -- Updated reaction time in seconds
+local ReactionTime = 1.99  -- Updated reaction time in seconds
 local DetectionRange = 10    -- Detection range in studs
 local Cooldown = tick()
 local Parried = false
