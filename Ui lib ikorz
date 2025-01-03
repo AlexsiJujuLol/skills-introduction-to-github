@@ -33,14 +33,13 @@ local ParryForce = 500
 local CooldownTime = 0.2
 local SpamLevel = 1
 local BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote")
-local ParryPredictionCircle = nil
 
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
-    for _, Ball in ipairs(workspace.Balls:GetChildren()) do
-        if Ball:GetAttribute("realBall") then
-            local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-            if HRP then
+    local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if HRP then
+        for _, Ball in ipairs(workspace.Balls:GetChildren()) do
+            if Ball:GetAttribute("realBall") then
                 local Distance = (HRP.Position - Ball.Position).Magnitude
                 if Distance < closestDistance then
                     closestDistance = Distance
@@ -53,11 +52,7 @@ local function GetClosestBall()
 end
 
 local function CreatePredictionCircle(position)
-    if ParryPredictionCircle then
-        ParryPredictionCircle:Destroy()
-    end
-
-    ParryPredictionCircle = Instance.new("Part")
+    local ParryPredictionCircle = Instance.new("Part")
     ParryPredictionCircle.Shape = Enum.PartType.Ball
     ParryPredictionCircle.Size = Vector3.new(4, 0.1, 4)
     ParryPredictionCircle.Position = position
@@ -66,6 +61,7 @@ local function CreatePredictionCircle(position)
     ParryPredictionCircle.Material = Enum.Material.Neon
     ParryPredictionCircle.Color = Color3.fromRGB(0, 255, 0)
     ParryPredictionCircle.Parent = workspace
+    return ParryPredictionCircle
 end
 
 RunService.Heartbeat:Connect(function()
@@ -78,23 +74,28 @@ RunService.Heartbeat:Connect(function()
     local BallVelocity = Ball.Velocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
     local TimeToReach = Distance / BallVelocity
-    local BallDirection = (Ball.Position - HRP.Position).Unit
-    local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
 
-    if BallToPlayerDotProduct > 0 then
-        CreatePredictionCircle(Ball.Position)
-    end
+    if Distance <= DetectionRange and TimeToReach <= ReactionTime then
+        local BallDirection = (Ball.Position - HRP.Position).Unit
+        local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
 
-    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRange and TimeToReach <= ReactionTime and BallToPlayerDotProduct > 0 then
-        for i = 1, SpamLevel do
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-            local Direction = (Ball.Position - HRP.Position).unit
-            Ball:ApplyImpulse(Direction * ParryForce)
+        if BallToPlayerDotProduct > 0 then
+            -- Create prediction circle (for visual purposes)
+            local predictionCircle = CreatePredictionCircle(Ball.Position)
+
+            -- Execute Parry action
+            if Ball:GetAttribute("target") == Player.Name and not Parried then
+                for i = 1, SpamLevel do
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                    local Direction = (Ball.Position - HRP.Position).unit
+                    Ball:ApplyImpulse(Direction * ParryForce)
+                end
+                Parried = true
+                Cooldown = tick()
+                BladeBallRemote:FireServer(Ball)
+                predictionCircle:Destroy() -- Remove prediction circle after action
+            end
         end
-        Parried = true
-        Cooldown = tick()
-
-        BladeBallRemote:FireServer(Ball)
     end
 
     if (tick() - Cooldown) >= CooldownTime then
