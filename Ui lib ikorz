@@ -1,39 +1,30 @@
 local Ikorz = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
+-- Create Fluent UI Window
 local Window = Ikorz:CreateWindow({
-    Title = "Ikorz",
-    SubTitle = "by ur dad Ikorz",
+    Title = "Ikorz Auto Parry",
+    SubTitle = "Fluent UI Example",
     TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
+    Size = UDim2.fromOffset(400, 300),
     Acrylic = false,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
-    BladeBal = Window:AddTab({ Title = "Blade Bal", Icon = "sword" })
-}
+-- Create Auto Parry Tab
+local AutoParryTab = Window:AddTab({ Title = "Auto Parry" })
 
+-- Variables
+local AutoParryEnabled = false
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
-
-local AutoParryEnabled = false
-local ReactionTime = 1.99
 local DetectionRange = 10
-local Cooldown = tick()
-local Parried = false
-local ParryForce = 500
-local CooldownTime = 0.2
-local SpamLevel = 1
-local BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote")
+local ReactionTime = 2
 
+-- Function to Detect Closest Ball
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
     local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -51,19 +42,7 @@ local function GetClosestBall()
     return closestBall
 end
 
-local function CreatePredictionCircle(position)
-    local ParryPredictionCircle = Instance.new("Part")
-    ParryPredictionCircle.Shape = Enum.PartType.Ball
-    ParryPredictionCircle.Size = Vector3.new(4, 0.1, 4)
-    ParryPredictionCircle.Position = position
-    ParryPredictionCircle.Anchored = true
-    ParryPredictionCircle.CanCollide = false
-    ParryPredictionCircle.Material = Enum.Material.Neon
-    ParryPredictionCircle.Color = Color3.fromRGB(0, 255, 0)
-    ParryPredictionCircle.Parent = workspace
-    return ParryPredictionCircle
-end
-
+-- Auto Parry Logic
 RunService.Heartbeat:Connect(function()
     if not AutoParryEnabled then return end
 
@@ -71,40 +50,21 @@ RunService.Heartbeat:Connect(function()
     local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not Ball or not HRP then return end
 
-    local BallVelocity = Ball.Velocity.Magnitude
     local Distance = (HRP.Position - Ball.Position).Magnitude
+    local BallVelocity = Ball.Velocity.Magnitude
     local TimeToReach = Distance / BallVelocity
 
     if Distance <= DetectionRange and TimeToReach <= ReactionTime then
-        local BallDirection = (Ball.Position - HRP.Position).Unit
-        local BallToPlayerDotProduct = BallDirection:Dot(HRP.CFrame.LookVector)
-
-        if BallToPlayerDotProduct > 0 then
-            -- Create prediction circle (for visual purposes)
-            local predictionCircle = CreatePredictionCircle(Ball.Position)
-
-            -- Execute Parry action
-            if Ball:GetAttribute("target") == Player.Name and not Parried then
-                for i = 1, SpamLevel do
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                    local Direction = (Ball.Position - HRP.Position).unit
-                    Ball:ApplyImpulse(Direction * ParryForce)
-                end
-                Parried = true
-                Cooldown = tick()
-                BladeBallRemote:FireServer(Ball)
-                predictionCircle:Destroy() -- Remove prediction circle after action
-            end
+        if Ball:GetAttribute("target") == Player.Name then
+            -- Perform Parry
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            Ball:ApplyImpulse((Ball.Position - HRP.Position).Unit * 500)
         end
-    end
-
-    if (tick() - Cooldown) >= CooldownTime then
-        Parried = false
     end
 end)
 
--- Auto Parry Toggle (Moved to Main Tab)
-local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
+-- Add Toggle to Auto Parry Tab
+local AutoParryToggle = AutoParryTab:AddToggle("AutoParryToggle", { Title = "Enable Auto Parry", Default = false })
 
 AutoParryToggle:OnChanged(function()
     AutoParryEnabled = AutoParryToggle.Value
@@ -115,77 +75,11 @@ AutoParryToggle:OnChanged(function()
     end
 end)
 
--- Spam Level Dropdown
-local SpamLevelToggle = Tabs.BladeBal:AddDropdown("SpamLevelToggle", {
-    Title = "Spam Level",
-    Default = 1,
-    Values = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" },
-    Callback = function(value)
-        SpamLevel = tonumber(value)
-        print("Spam Level set to: " .. SpamLevel)
-    end
-})
-
--- Settings Sliders
-Tabs.Settings:AddSlider("ReactionTimeSlider", {
-    Title = "Reaction Time",
-    Min = 0.1,
-    Max = 5,
-    Default = ReactionTime,
-    Callback = function(value)
-        ReactionTime = value
-        print("Reaction Time set to: " .. value .. " seconds")
-    end
-})
-
-Tabs.Settings:AddSlider("DetectionRangeSlider", {
-    Title = "Detection Range",
-    Min = 5,
-    Max = 20,
-    Default = DetectionRange,
-    Callback = function(value)
-        DetectionRange = value
-        print("Detection Range set to: " .. value .. " studs")
-    end
-})
-
-Tabs.Settings:AddSlider("ParryForceSlider", {
-    Title = "Parry Force",
-    Min = 100,
-    Max = 1000,
-    Default = ParryForce,
-    Callback = function(value)
-        ParryForce = value
-        print("Parry Force set to: " .. value)
-    end
-})
-
-Tabs.Settings:AddSlider("CooldownTimeSlider", {
-    Title = "Cooldown Time",
-    Min = 0.1,
-    Max = 1,
-    Default = CooldownTime,
-    Callback = function(value)
-        CooldownTime = value
-        print("Cooldown Time set to: " .. value .. " seconds")
-    end
-})
-
-SaveManager:SetLibrary(Ikorz)
-InterfaceManager:SetLibrary(Ikorz)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder("IkorzScriptHub")
-SaveManager:SetFolder("IkorzScriptHub/specific-game")
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
-
+-- Select Tab on Load
 Window:SelectTab(1)
 
 Ikorz:Notify({
-    Title = "Ikorz",
-    Content = "The script has been loaded.",
-    Duration = 8
+    Title = "Ikorz Auto Parry",
+    Content = "Script Loaded Successfully",
+    Duration = 5
 })
-
-SaveManager:LoadAutoloadConfig()
