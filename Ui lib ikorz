@@ -103,7 +103,8 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-local AutoParryToggle = Tabs.BladeBal:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
+-- Auto Parry Toggle (Moved to Main Tab)
+local AutoParryToggle = Tabs.Main:AddToggle("AutoParryToggle", { Title = "Auto Parry", Default = false })
 
 AutoParryToggle:OnChanged(function()
     AutoParryEnabled = AutoParryToggle.Value
@@ -114,6 +115,7 @@ AutoParryToggle:OnChanged(function()
     end
 end)
 
+-- Spam Level Dropdown
 local SpamLevelToggle = Tabs.BladeBal:AddDropdown("SpamLevelToggle", {
     Title = "Spam Level",
     Default = 1,
@@ -124,6 +126,7 @@ local SpamLevelToggle = Tabs.BladeBal:AddDropdown("SpamLevelToggle", {
     end
 })
 
+-- Settings Sliders
 Tabs.Settings:AddSlider("ReactionTimeSlider", {
     Title = "Reaction Time",
     Min = 0.1,
