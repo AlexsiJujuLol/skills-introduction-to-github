@@ -21,8 +21,12 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
-local DetectionRange = 10
-local ReactionTime = 2
+local DetectionRange = 15
+local ReactionTime = 0.5
+local BallForce = 500
+
+-- Remote or custom handling
+local BladeBallRemote = ReplicatedStorage:FindFirstChild("BladeBallRemote") or error("BladeBallRemote not found")
 
 -- Function to Detect Closest Ball
 local function GetClosestBall()
@@ -30,7 +34,7 @@ local function GetClosestBall()
     local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if HRP then
         for _, Ball in ipairs(workspace.Balls:GetChildren()) do
-            if Ball:GetAttribute("realBall") then
+            if Ball:IsA("BasePart") and Ball:GetAttribute("realBall") then
                 local Distance = (HRP.Position - Ball.Position).Magnitude
                 if Distance < closestDistance then
                     closestDistance = Distance
@@ -51,14 +55,17 @@ RunService.Heartbeat:Connect(function()
     if not Ball or not HRP then return end
 
     local Distance = (HRP.Position - Ball.Position).Magnitude
-    local BallVelocity = Ball.Velocity.Magnitude
-    local TimeToReach = Distance / BallVelocity
+    local BallVelocity = Ball.AssemblyLinearVelocity.Magnitude -- Use AssemblyLinearVelocity for physics
+    local TimeToReach = Distance / (BallVelocity > 0 and BallVelocity or 1)
 
     if Distance <= DetectionRange and TimeToReach <= ReactionTime then
         if Ball:GetAttribute("target") == Player.Name then
-            -- Perform Parry
+            -- Execute Parry
             VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-            Ball:ApplyImpulse((Ball.Position - HRP.Position).Unit * 500)
+            Ball:ApplyImpulse((Ball.Position - HRP.Position).Unit * BallForce)
+
+            -- Notify the server via RemoteEvent (if applicable)
+            BladeBallRemote:FireServer(Ball)
         end
     end
 end)
