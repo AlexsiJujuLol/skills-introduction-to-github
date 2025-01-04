@@ -25,8 +25,15 @@ local DetectionRange = 15
 local ReactionTime = 0.5
 local BallForce = 500
 
--- Remote or custom handling
-local BladeBallRemote = ReplicatedStorage:FindFirstChild("BladeBallRemote") or error("BladeBallRemote not found")
+-- Fix for BladeBallRemote
+local BladeBallRemote = ReplicatedStorage:FindFirstChild("BladeBallRemote") 
+if not BladeBallRemote then
+    warn("BladeBallRemote not found. Trying to locate...")
+    BladeBallRemote = ReplicatedStorage:WaitForChild("BladeBallRemote", 10) -- Wait for 10 seconds
+    if not BladeBallRemote then
+        error("BladeBallRemote is missing from ReplicatedStorage.")
+    end
+end
 
 -- Function to Detect Closest Ball
 local function GetClosestBall()
@@ -64,7 +71,7 @@ RunService.Heartbeat:Connect(function()
             VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
             Ball:ApplyImpulse((Ball.Position - HRP.Position).Unit * BallForce)
 
-            -- Notify the server via RemoteEvent (if applicable)
+            -- Notify the server via RemoteEvent
             BladeBallRemote:FireServer(Ball)
         end
     end
