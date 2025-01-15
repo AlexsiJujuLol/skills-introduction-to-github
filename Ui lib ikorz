@@ -1,106 +1,213 @@
--- Load Rayfield
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
--- Create the Window
-local Window = Rayfield:CreateWindow({
-   Name = "Blade Ball Auto Parry",
-   Icon = 0, -- No icon
-   LoadingTitle = "Blade Ball Auto Parry",
-   LoadingSubtitle = "Optimized Script",
-   Theme = "Default",
-
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "BladeBallHub",
-      FileName = "BladeBallConfig"
-   },
-
-   KeySystem = true,
-   KeySettings = {
-      Title = "Blade Ball Key System",
-      Subtitle = "Access Required",
-      Note = "Enter the key to unlock features",
-      FileName = "BladeBallKeyFile",
-      SaveKey = true,
-      GrabKeyFromSite = false,
-      Key = {"Ikorz"} -- Set your key here
-   }
-})
-
--- Blade Ball Tab
-local BladeBallTab = Window:CreateTab("Blade Ball", 4483362458)
-
--- Auto Parry Settings
+local AutoAimEnabled = true
+local ESPEnabled = true
+local NoclipEnabled = true
+local DetectionRange = 1000
+local EnemiesOnly = true
 local AutoParryEnabled = true
 local ReactionTime = 0.35
-local DetectionRange = 50
+local DetectionRangeParry = 50
+local CooldownTime = 0.15
 local Parried = false
 local LastParryTime = 0
-local RemoteBall
 
--- Blade Ball Tab Section for Auto Parry
-local BladeBallSection = BladeBallTab:CreateSection("Auto Parry Settings")
+local Player = game.Players.LocalPlayer
 
--- Enable Auto Parry Toggle
-BladeBallTab:CreateToggle({
-   Name = "Enable Auto Parry",
-   Default = true,
-   Callback = function(value)
-      AutoParryEnabled = value
-      Rayfield:Notify({
-         Title = "Auto Parry Status",
-         Content = value and "Auto Parry Enabled" or "Auto Parry Disabled",
-         Duration = 5
-      })
-   end
+local Window = OrionLib:MakeWindow({
+    Name = "Ikorz Script Hub",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "IkorzConfig"
 })
 
--- Reaction Time Slider (Seconds)
-BladeBallTab:CreateSlider({
-   Name = "Reaction Time (Seconds)",
-   Min = 0.1,
-   Max = 1,
-   Default = 0.35,
-   Increment = 0.01,
-   Callback = function(value)
-      ReactionTime = value
-      Rayfield:Notify({
-         Title = "Reaction Time Updated",
-         Content = "New Reaction Time: " .. value .. " seconds",
-         Duration = 5
-      })
-   end
+local ArsenalTab = Window:MakeTab({
+    Name = "Arsenal",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
 })
 
--- Detection Range Slider (Studs)
-BladeBallTab:CreateSlider({
-   Name = "Detection Range (Studs)",
-   Min = 10,
-   Max = 100,
-   Default = 50,
-   Increment = 1,
-   Callback = function(value)
-      DetectionRange = value
-      Rayfield:Notify({
-         Title = "Detection Range Updated",
-         Content = "New Range: " .. value .. " studs",
-         Duration = 5
-      })
-   end
+ArsenalTab:AddToggle({
+    Name = "Enable Aimbot",
+    Default = true,
+    Callback = function(value)
+        AutoAimEnabled = value
+        OrionLib:MakeNotification({
+            Name = "Aimbot",
+            Content = value and "Enabled" or "Disabled",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
 })
 
--- Auto Parry Logic
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local Player = Players.LocalPlayer
+ArsenalTab:AddToggle({
+    Name = "Enable ESP",
+    Default = true,
+    Callback = function(value)
+        ESPEnabled = value
+        OrionLib:MakeNotification({
+            Name = "ESP",
+            Content = value and "Enabled" or "Disabled",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+ArsenalTab:AddToggle({
+    Name = "Enable Noclip",
+    Default = true,
+    Callback = function(value)
+        NoclipEnabled = value
+        OrionLib:MakeNotification({
+            Name = "Noclip",
+            Content = value and "Enabled" or "Disabled",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+local BladeBallTab = Window:MakeTab({
+    Name = "Blade Ball",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+BladeBallTab:AddToggle({
+    Name = "Enable Auto Parry",
+    Default = true,
+    Callback = function(value)
+        AutoParryEnabled = value
+        OrionLib:MakeNotification({
+            Name = "Auto Parry",
+            Content = value and "Enabled" or "Disabled",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+BladeBallTab:AddSlider({
+    Name = "Reaction Time (Seconds)",
+    Min = 0.1,
+    Max = 1,
+    Default = 0.35,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 0.01,
+    ValueName = "s",
+    Callback = function(value)
+        ReactionTime = value
+    end
+})
+
+BladeBallTab:AddSlider({
+    Name = "Detection Range (Studs)",
+    Min = 10,
+    Max = 100,
+    Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "studs",
+    Callback = function(value)
+        DetectionRangeParry = value
+    end
+})
+
+BladeBallTab:AddSlider({
+    Name = "Parry Cooldown (Seconds)",
+    Min = 0.1,
+    Max = 1,
+    Default = 0.15,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 0.01,
+    ValueName = "s",
+    Callback = function(value)
+        CooldownTime = value
+    end
+})
+
+local function CreateESP(player)
+    local Box = Drawing.new("Square")
+    Box.Visible = false
+    Box.Color = Color3.fromRGB(255, 0, 0)
+    Box.Thickness = 1
+    Box.Transparency = 1
+    Box.Filled = false
+
+    local function Update()
+        while ESPEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 do
+            local RootPart = player.Character.HumanoidRootPart
+            local ScreenPosition, OnScreen = workspace.CurrentCamera:WorldToViewportPoint(RootPart.Position)
+
+            if OnScreen then
+                Box.Visible = true
+                Box.Size = Vector2.new(2000 / ScreenPosition.Z, 3000 / ScreenPosition.Z)
+                Box.Position = Vector2.new(ScreenPosition.X - Box.Size.X / 2, ScreenPosition.Y - Box.Size.Y / 2)
+            else
+                Box.Visible = false
+            end
+
+            task.wait()
+        end
+        Box.Visible = false
+    end
+
+    task.spawn(Update)
+end
+
+for _, plr in pairs(game.Players:GetPlayers()) do
+    if plr ~= Player and (not EnemiesOnly or plr.Team ~= Player.Team) then
+        CreateESP(plr)
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(plr)
+    if plr ~= Player and (not EnemiesOnly or plr.Team ~= Player.Team) then
+        CreateESP(plr)
+    end
+end)
+
+game:GetService("RunService").Stepped:Connect(function()
+    if NoclipEnabled then
+        for _, v in pairs(Player.Character:GetDescendants()) do
+            if v:IsA("BasePart") and v.CanCollide then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+local function GetClosestEnemy()
+    local closestEnemy, closestDistance = nil, DetectionRange
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+            if not EnemiesOnly or plr.Team ~= Player.Team then
+                local Distance = (Player.Character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                if Distance < closestDistance then
+                    closestDistance = Distance
+                    closestEnemy = plr
+                end
+            end
+        end
+    end
+    return closestEnemy
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if AutoAimEnabled and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        local Enemy = GetClosestEnemy()
+        if Enemy and Enemy.Character and Enemy.Character:FindFirstChild("HumanoidRootPart") then
+            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Enemy.Character.HumanoidRootPart.Position)
+        end
+    end
+end)
 
 local function GetClosestBall()
     local closestBall, closestDistance = nil, math.huge
     local BallsFolder = workspace:FindFirstChild("Balls")
-    if not BallsFolder then
-        return nil
-    end
+    if not BallsFolder then return nil end
 
     for _, Ball in ipairs(BallsFolder:GetChildren()) do
         if Ball:GetAttribute("realBall") then
@@ -117,14 +224,10 @@ local function GetClosestBall()
     return closestBall
 end
 
--- Loop for Parrying
-RunService.RenderStepped:Connect(function()
+game:GetService("RunService").RenderStepped:Connect(function()
     if not AutoParryEnabled then return end
 
-    local Character = Player.Character
-    if not Character then return end
-
-    local HRP = Character:FindFirstChild("HumanoidRootPart")
+    local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not HRP then return end
 
     local Ball = GetClosestBall()
@@ -134,33 +237,22 @@ RunService.RenderStepped:Connect(function()
     local Distance = (HRP.Position - Ball.Position).Magnitude
     local TimeToReach = Distance / BallVelocity
 
-    if Distance <= DetectionRange and TimeToReach <= ReactionTime and (tick() - LastParryTime) >= 0.15 then
-        -- Trigger Parry
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)  -- Mouse down event
-        Parried = true
-        LastParryTime = tick()
-
-        -- Update Ball color for visual feedback (green for successful parry)
-        Ball.Color = Color3.fromRGB(0, 255, 0)  -- Visual feedback for parried ball
-
-        -- Optional: Add a cooldown or reset Parried status here
+    if Ball:GetAttribute("target") == Player.Name and not Parried and Distance <= DetectionRangeParry and TimeToReach <= ReactionTime then
+        if (tick() - LastParryTime) >= CooldownTime then
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            Parried = true
+            LastParryTime = tick()
+        end
     end
 
-    -- Reset Parry status after cooldown
-    if (tick() - LastParryTime) >= 0.15 then
+    if (tick() - LastParryTime) >= CooldownTime then
         Parried = false
     end
 end)
 
--- Handling Remote Ball Functionality
-RunService.Heartbeat:Connect(function()
-    -- You can define logic here to handle remote ball movement, effects, etc.
-    local Ball = GetClosestBall()
-    if Ball then
-        -- Example: Ball tracking or position reset logic can go here
-        -- For example, you can make the ball move towards a certain position or apply effects
-    end
-end)
-
--- Final Configuration Load
-Rayfield:LoadConfiguration()
+OrionLib:MakeNotification({
+    Name = "Ikorz Script Hub",
+    Content = "Script loaded successfully!",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
