@@ -1,7 +1,6 @@
 local Stats = game:GetService("Stats")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
 local local_player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local parry_remote = nil
@@ -58,19 +57,37 @@ end)
 
 resolve_parry_Remote()
 
--- OrionLib Window Setup
-local Window = OrionLib:MakeWindow({
-    Name = "ikorz",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "ikorz"
-})
+-- Mobile-friendly UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
+ScreenGui.Name = "AutoParryUI"
 
-Window:MakeNotification({
-    Name = "Auto Parry Active",
-    Content = "The script is running. Auto Parry is enabled.",
-    Image = "rbxassetid://4483345998",
-    Time = 5
-})
+local Frame = Instance.new("Frame")
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 200, 0, 50)
+Frame.Position = UDim2.new(0.5, -100, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BorderSizePixel = 0
+Frame.AnchorPoint = Vector2.new(0.5, 0.5)
 
-OrionLib:Init()
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Parent = Frame
+ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+ToggleButton.Text = "Enable Auto Parry"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 20
+
+local autoParryEnabled = true
+
+ToggleButton.MouseButton1Click:Connect(function()
+    autoParryEnabled = not autoParryEnabled
+    if autoParryEnabled then
+        ToggleButton.Text = "Disable Auto Parry"
+    else
+        ToggleButton.Text = "Enable Auto Parry"
+    end
+end)
+
+print("Script initialized with Auto Parry enabled.")
