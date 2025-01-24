@@ -74,7 +74,7 @@ end
 local function ShouldPerformParry(Distance, BallVelocity, DynamicParryDistance)
     -- Only perform a parry if the ball is within the valid range, moving fast enough, and the time allows for it
     return (BallVelocity > MinimumBallVelocity) and (Distance <= DynamicParryDistance) and
-           (tick() - lastParryTime >= CalculateDynamicParryDelay(Stats.Network.ServerStatsItem["Data Ping"]:GetValue(), false))
+           (tick() - lastParryTime >= ParryCooldown)
 end
 
 local function PerformParry()
@@ -99,6 +99,7 @@ task.spawn(function()
                 local BallVelocity = Ball.AssemblyLinearVelocity.Magnitude
                 local Distance = local_player:DistanceFromCharacter(BallPosition)
 
+                -- Adjust parry distance based on ping
                 local Ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
                 local PingAdjustment = Ping / 1000
                 local DynamicPingOffset = PingAdjustment * 0.5
@@ -112,14 +113,15 @@ task.spawn(function()
 
                 local ballIsCurved, predictedPosition = DetectBallCurveAndAdjustPrediction(Ball)
 
+                -- Check if the conditions for a parry are met
                 if ShouldPerformParry(Distance, BallVelocity, DynamicParryDistance) then
+                    -- Adjust parry delay for curved balls
                     if ballIsCurved then
-                        -- Adjust parry timing for curved balls
                         ParryDelay = 0.02
                     else
                         ParryDelay = 0.015
                     end
-                    -- Perform Parry with adjusted logic
+                    -- Perform Parry if conditions are met
                     PerformParry()
                 end
             end
