@@ -40,9 +40,17 @@ local function IsTheTarget()
     return local_player.Character and local_player.Character:FindFirstChild("Highlight")
 end
 
-local function DetectBallCurve(ball)
-    local ballPosition = ball.Position
-    local ballVelocity = ball.AssemblyLinearVelocity
+-- Ball Prediction Function
+local function PredictBallPosition(Ball, timeAhead)
+    local ballVelocity = Ball.AssemblyLinearVelocity
+    local predictedPosition = Ball.Position + ballVelocity * timeAhead
+    return predictedPosition
+end
+
+-- Detecting Curved Ball
+local function DetectBallCurveAndAdjustPrediction(Ball)
+    local ballPosition = Ball.Position
+    local ballVelocity = Ball.AssemblyLinearVelocity
     local speed = ballVelocity.Magnitude
 
     if lastBallPosition then
@@ -51,14 +59,22 @@ local function DetectBallCurve(ball)
         local angle = math.acos(velocityDirection:Dot(deltaPos.Unit)) * (180 / math.pi)
 
         if angle > 10 then -- Threshold for detecting curve
-            return true
+            local predictedPosition = PredictBallPosition(Ball, 0.1) -- Predict where the ball will be in 0.1 seconds
+            -- Adjust parry based on prediction
+            return true, predictedPosition
         end
     end
 
     lastBallPosition = ballPosition
     lastBallVelocity = ballVelocity
 
-    return false
+    return false, ballPosition
+end
+
+local function ShouldPerformParry(Distance, BallVelocity, DynamicParryDistance)
+    -- Only perform a parry if the ball is within the valid range, moving fast enough, and the time allows for it
+    return (BallVelocity > MinimumBallVelocity) and (Distance <= DynamicParryDistance) and
+           (tick() - lastParryTime >= CalculateDynamicParryDelay(Stats.Network.ServerStatsItem["Data Ping"]:GetValue(), false))
 end
 
 local function PerformParry()
@@ -94,15 +110,16 @@ task.spawn(function()
                     DynamicParryDistance = MaxDistanceToParry
                 end
 
-                local ballIsCurved = DetectBallCurve(Ball)
+                local ballIsCurved, predictedPosition = DetectBallCurveAndAdjustPrediction(Ball)
 
-                if BallVelocity > MinimumBallVelocity and (Distance / BallVelocity) <= DynamicParryDistance and IsTheTarget() then
+                if ShouldPerformParry(Distance, BallVelocity, DynamicParryDistance) then
                     if ballIsCurved then
                         -- Adjust parry timing for curved balls
                         ParryDelay = 0.02
                     else
                         ParryDelay = 0.015
                     end
+                    -- Perform Parry with adjusted logic
                     PerformParry()
                 end
             end
