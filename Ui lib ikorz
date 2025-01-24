@@ -31,6 +31,7 @@ end
 local function FindBall()
     for _, ball in pairs(workspace:WaitForChild("Balls"):GetChildren()) do
         if ball:GetAttribute("realBall") == true then
+            print("Ball detected:", ball) -- Debugging
             return ball
         end
     end
@@ -40,17 +41,9 @@ local function IsTheTarget()
     return local_player.Character and local_player.Character:FindFirstChild("Highlight")
 end
 
--- Ball Prediction Function
-local function PredictBallPosition(Ball, timeAhead)
-    local ballVelocity = Ball.AssemblyLinearVelocity
-    local predictedPosition = Ball.Position + ballVelocity * timeAhead
-    return predictedPosition
-end
-
--- Detecting Curved Ball
-local function DetectBallCurveAndAdjustPrediction(Ball)
-    local ballPosition = Ball.Position
-    local ballVelocity = Ball.AssemblyLinearVelocity
+local function DetectBallCurve(ball)
+    local ballPosition = ball.Position
+    local ballVelocity = ball.AssemblyLinearVelocity
     local speed = ballVelocity.Magnitude
 
     if lastBallPosition then
@@ -59,27 +52,20 @@ local function DetectBallCurveAndAdjustPrediction(Ball)
         local angle = math.acos(velocityDirection:Dot(deltaPos.Unit)) * (180 / math.pi)
 
         if angle > 10 then -- Threshold for detecting curve
-            local predictedPosition = PredictBallPosition(Ball, 0.1) -- Predict where the ball will be in 0.1 seconds
-            -- Adjust parry based on prediction
-            return true, predictedPosition
+            return true
         end
     end
 
     lastBallPosition = ballPosition
     lastBallVelocity = ballVelocity
 
-    return false, ballPosition
-end
-
-local function ShouldPerformParry(Distance, BallVelocity, DynamicParryDistance)
-    -- Only perform a parry if the ball is within the valid range, moving fast enough, and the time allows for it
-    return (BallVelocity > MinimumBallVelocity) and (Distance <= DynamicParryDistance) and
-           (tick() - lastParryTime >= ParryCooldown)
+    return false
 end
 
 local function PerformParry()
     if tick() - lastParryTime >= ParryCooldown and canParry and not isParrying then
         isParrying = true
+        print("Parry performed!") -- Debugging
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
         lastParryTime = tick()
@@ -99,7 +85,9 @@ task.spawn(function()
                 local BallVelocity = Ball.AssemblyLinearVelocity.Magnitude
                 local Distance = local_player:DistanceFromCharacter(BallPosition)
 
-                -- Adjust parry distance based on ping
+                print("Ball velocity:", BallVelocity) -- Debugging
+                print("Distance to ball:", Distance) -- Debugging
+
                 local Ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
                 local PingAdjustment = Ping / 1000
                 local DynamicPingOffset = PingAdjustment * 0.5
@@ -111,17 +99,15 @@ task.spawn(function()
                     DynamicParryDistance = MaxDistanceToParry
                 end
 
-                local ballIsCurved, predictedPosition = DetectBallCurveAndAdjustPrediction(Ball)
+                local ballIsCurved = DetectBallCurve(Ball)
 
-                -- Check if the conditions for a parry are met
-                if ShouldPerformParry(Distance, BallVelocity, DynamicParryDistance) then
-                    -- Adjust parry delay for curved balls
+                if BallVelocity > MinimumBallVelocity and (Distance / BallVelocity) <= DynamicParryDistance and IsTheTarget() then
                     if ballIsCurved then
+                        -- Adjust parry timing for curved balls
                         ParryDelay = 0.02
                     else
                         ParryDelay = 0.015
                     end
-                    -- Perform Parry if conditions are met
                     PerformParry()
                 end
             end
