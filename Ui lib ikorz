@@ -1,13 +1,22 @@
 local Stats = game:GetService("Stats")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
 
 local local_player = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local parry_remote = nil
-local PingBased = false
+local PingBased = true
 local PingBasedOffset = 0.05
-local DistanceToParry = 0.4
+local MinDistanceToParry = 0.3
+local MaxDistanceToParry = 1.5
 local ParryDelay = 0.015
+local MinimumBallVelocity = 10
+local ParryCooldown = 0.1
+local lastParryTime = 0
+local lastCheckTime = 0
+local canParry = true
+local isParrying = false
+local lastBallVelocity = 0
+local lastBallPosition = nil
 
 local function resolve_parry_Remote()
     for _, service in pairs({game:GetService("AdService"), game:GetService("SocialService")}) do
@@ -20,74 +29,87 @@ local function resolve_parry_Remote()
 end
 
 local function FindBall()
-    local RealBall
     for _, ball in pairs(workspace:WaitForChild("Balls"):GetChildren()) do
         if ball:GetAttribute("realBall") == true then
-            RealBall = ball
-            break
+            return ball
         end
     end
-    return RealBall
 end
 
 local function IsTheTarget()
     return local_player.Character and local_player.Character:FindFirstChild("Highlight")
 end
 
-task.spawn(function()
-    while task.wait(ParryDelay) do
-        local Ball = FindBall()
-        if Ball then
-            local BallPosition = Ball.Position
-            local BallVelocity = Ball.AssemblyLinearVelocity.Magnitude
-            local Distance = local_player:DistanceFromCharacter(BallPosition)
-            local Ping = BallVelocity * (Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000)
+local function DetectBallCurve(ball)
+    local ballPosition = ball.Position
+    local ballVelocity = ball.AssemblyLinearVelocity
+    local speed = ballVelocity.Magnitude
 
-            if PingBased then
-                Distance -= Ping + PingBasedOffset
-            end
+    if lastBallPosition then
+        local deltaPos = ballPosition - lastBallPosition
+        local velocityDirection = ballVelocity.Unit
+        local angle = math.acos(velocityDirection:Dot(deltaPos.Unit)) * (180 / math.pi)
 
-            if (Distance / BallVelocity) <= DistanceToParry and IsTheTarget() then
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-            end
+        if angle > 10 then -- Threshold for detecting curve
+            return true
         end
     end
+
+    lastBallPosition = ballPosition
+    lastBallVelocity = ballVelocity
+
+    return false
+end
+
+local function PerformParry()
+    if tick() - lastParryTime >= ParryCooldown and canParry and not isParrying then
+        isParrying = true
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+        lastParryTime = tick()
+        task.delay(ParryCooldown, function()
+            canParry = true
+            isParrying = false
+        end)
+    end
+end
+
+task.spawn(function()
+    RunService.Heartbeat:Connect(function()
+        if tick() - lastCheckTime >= ParryDelay then
+            local Ball = FindBall()
+            if Ball then
+                local BallPosition = Ball.Position
+                local BallVelocity = Ball.AssemblyLinearVelocity.Magnitude
+                local Distance = local_player:DistanceFromCharacter(BallPosition)
+
+                local Ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+                local PingAdjustment = Ping / 1000
+                local DynamicPingOffset = PingAdjustment * 0.5
+                local DynamicParryDistance = MinDistanceToParry + DynamicPingOffset
+
+                if DynamicParryDistance < MinDistanceToParry then
+                    DynamicParryDistance = MinDistanceToParry
+                elseif DynamicParryDistance > MaxDistanceToParry then
+                    DynamicParryDistance = MaxDistanceToParry
+                end
+
+                local ballIsCurved = DetectBallCurve(Ball)
+
+                if BallVelocity > MinimumBallVelocity and (Distance / BallVelocity) <= DynamicParryDistance and IsTheTarget() then
+                    if ballIsCurved then
+                        -- Adjust parry timing for curved balls
+                        ParryDelay = 0.02
+                    else
+                        ParryDelay = 0.015
+                    end
+                    PerformParry()
+                end
+            end
+
+            lastCheckTime = tick()
+        end
+    end)
 end)
 
 resolve_parry_Remote()
-
--- Mobile-friendly UI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
-ScreenGui.Name = "AutoParryUI"
-
-local Frame = Instance.new("Frame")
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 200, 0, 50)
-Frame.Position = UDim2.new(0.5, -100, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Frame.BorderSizePixel = 0
-Frame.AnchorPoint = Vector2.new(0.5, 0.5)
-
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Parent = Frame
-ToggleButton.Size = UDim2.new(1, 0, 1, 0)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-ToggleButton.Text = "Enable Auto Parry"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 20
-
-local autoParryEnabled = true
-
-ToggleButton.MouseButton1Click:Connect(function()
-    autoParryEnabled = not autoParryEnabled
-    if autoParryEnabled then
-        ToggleButton.Text = "Disable Auto Parry"
-    else
-        ToggleButton.Text = "Enable Auto Parry"
-    end
-end)
-
-print("Script initialized with Auto Parry enabled.")
