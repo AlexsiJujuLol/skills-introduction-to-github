@@ -18,20 +18,9 @@ local isParrying = false
 local lastBallVelocity = 0
 local lastBallPosition = nil
 
-local function resolve_parry_Remote()
-    for _, service in pairs({game:GetService("AdService"), game:GetService("SocialService")}) do
-        local temp_remote = service:FindFirstChildOfClass("RemoteEvent")
-        if temp_remote and temp_remote.Name:find("\n") then
-            parry_remote = temp_remote
-            break
-        end
-    end
-end
-
 local function FindBall()
     for _, ball in pairs(workspace:WaitForChild("Balls"):GetChildren()) do
         if ball:GetAttribute("realBall") == true then
-            print("Ball detected:", ball) -- Debugging
             return ball
         end
     end
@@ -51,7 +40,7 @@ local function DetectBallCurve(ball)
         local velocityDirection = ballVelocity.Unit
         local angle = math.acos(velocityDirection:Dot(deltaPos.Unit)) * (180 / math.pi)
 
-        if angle > 10 then -- Threshold for detecting curve
+        if angle > 10 then
             return true
         end
     end
@@ -65,7 +54,6 @@ end
 local function PerformParry()
     if tick() - lastParryTime >= ParryCooldown and canParry and not isParrying then
         isParrying = true
-        print("Parry performed!") -- Debugging
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
         lastParryTime = tick()
@@ -85,9 +73,6 @@ task.spawn(function()
                 local BallVelocity = Ball.AssemblyLinearVelocity.Magnitude
                 local Distance = local_player:DistanceFromCharacter(BallPosition)
 
-                print("Ball velocity:", BallVelocity) -- Debugging
-                print("Distance to ball:", Distance) -- Debugging
-
                 local Ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
                 local PingAdjustment = Ping / 1000
                 local DynamicPingOffset = PingAdjustment * 0.5
@@ -103,7 +88,6 @@ task.spawn(function()
 
                 if BallVelocity > MinimumBallVelocity and (Distance / BallVelocity) <= DynamicParryDistance and IsTheTarget() then
                     if ballIsCurved then
-                        -- Adjust parry timing for curved balls
                         ParryDelay = 0.02
                     else
                         ParryDelay = 0.015
@@ -116,5 +100,3 @@ task.spawn(function()
         end
     end)
 end)
-
-resolve_parry_Remote()
