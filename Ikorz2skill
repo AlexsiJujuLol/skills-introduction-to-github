@@ -1,73 +1,153 @@
-getgenv().enabled = true
-getgenv().aimpart = "HumanoidRootPart" -- Default aim part is "HumanoidRootPart"
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local replicated_storage = game:GetService("ReplicatedStorage")
-local players = game:GetService("Players")
-local camera = workspace.CurrentCamera
-local utility = require(replicated_storage:FindFirstChild("Modules").Utility)
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-local function getPlayersOrEntities()
-    local entities = {}
-    for _, child in ipairs(workspace:GetChildren()) do
-        if child:FindFirstChildOfClass("Humanoid") then
-            table.insert(entities, child)
-        elseif child.Name == "HurtEffect" then
-            for _, hurtPlayer in ipairs(child:GetChildren()) do
-                if hurtPlayer.ClassName ~= "Highlight" then
-                    table.insert(entities, hurtPlayer)
-                end
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "IkorzUI"
+screenGui.Parent = playerGui
+
+-- Main UI Frame (Glass Effect)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 420, 0, 270)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -135)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainFrame.BackgroundTransparency = 0.35 -- More Transparent
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = screenGui
+
+-- UI Drop Shadow
+local shadow = Instance.new("ImageLabel")
+shadow.Size = UDim2.new(1, 40, 1, 40)
+shadow.Position = UDim2.new(0, -20, 0, -20)
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageTransparency = 0.25
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+shadow.BackgroundTransparency = 1
+shadow.Parent = mainFrame
+
+-- UI Stroke for Shininess
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 4
+stroke.Transparency = 0.05 -- Shinier
+stroke.Color = Color3.fromRGB(160, 160, 255)
+stroke.Parent = mainFrame
+
+-- Animated Title Bar
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 80)
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.Font = Enum.Font.GothamBold
+titleBar.TextSize = 20
+titleBar.Text = "Ikorz UI"
+titleBar.Parent = mainFrame
+
+-- Glowing Gradient on Title Bar
+local glow = Instance.new("UIGradient")
+glow.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 160, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 255))
+}
+glow.Rotation = 0
+glow.Parent = titleBar
+
+spawn(function()
+    while true do
+        TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
+            Rotation = 180
+        }):Play()
+        wait(2)
+        TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
+            Rotation = 0
+        }):Play()
+        wait(2)
+    end
+end)
+
+-- UI Button (Shiny Ripple Effect)
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0.8, 0, 0, 45)
+button.Position = UDim2.new(0.1, 0, 0.6, 0)
+button.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+button.BackgroundTransparency = 0.1
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.Gotham
+button.TextSize = 18
+button.Text = "Click Me"
+button.Parent = mainFrame
+
+-- Button Stroke (More Glow)
+local buttonStroke = Instance.new("UIStroke")
+buttonStroke.Thickness = 3
+buttonStroke.Color = Color3.fromRGB(200, 200, 255)
+buttonStroke.Parent = button
+
+-- Button Hover & Ripple Effect
+button.MouseEnter:Connect(function()
+    TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(120, 120, 200)
+    }):Play()
+end)
+
+button.MouseLeave:Connect(function()
+    TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+    }):Play()
+end)
+
+button.MouseButton1Click:Connect(function()
+    local ripple = Instance.new("ImageLabel")
+    ripple.Size = UDim2.new(0, 10, 0, 10)
+    ripple.Position = UDim2.new(0.5, -5, 0.5, -5)
+    ripple.Image = "rbxassetid://3570695787"
+    ripple.ImageColor3 = Color3.fromRGB(200, 200, 255)
+    ripple.BackgroundTransparency = 1
+    ripple.Parent = button
+
+    TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(2, 0, 2, 0),
+        ImageTransparency = 1
+    }):Play()
+
+    wait(0.5)
+    ripple:Destroy()
+end)
+
+-- Improved Load Animation (Smooth Expand & Fade In)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -400)
+mainFrame.Size = UDim2.new(0, 0, 0, 0)
+mainFrame.BackgroundTransparency = 1
+
+TweenService:Create(mainFrame, TweenInfo.new(1.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+    Position = UDim2.new(0.5, -210, 0.5, -135),
+    Size = UDim2.new(0, 420, 0, 270),
+    BackgroundTransparency = 0.35
+}):Play()
+
+-- Make UI Draggable
+local dragging, dragStart, startPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
-        end
+        end)
     end
-    return entities
-end
+end)
 
-local function isEnemy(player)
-    if not getgenv().teamcheck then
-        return true 
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-    return player.Team ~= players.LocalPlayer.Team 
-end
-
-local function getClosestPlayer()
-    if not getgenv().enabled then return nil end
-
-    local closest, closestDistance = nil, math.huge
-    local localPlayer = players.LocalPlayer
-    local character = localPlayer.Character
-
-    if not character then return nil end
-
-    for _, player in ipairs(getPlayersOrEntities()) do
-        if player == localPlayer then continue end
-        if not player:FindFirstChild(getgenv().aimpart) then continue end
-        if not isEnemy(player) then continue end 
-
-        local position, onScreen = camera:WorldToViewportPoint(player[getgenv().aimpart].Position)
-        if not onScreen then continue end 
-
-        local center = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-        local distance = (center - Vector2.new(position.X, position.Y)).Magnitude
-
-        if distance < closestDistance then
-            closest = player
-            closestDistance = distance
-        end
-    end
-
-    return closest
-end
-
-local oldRaycast = utility.Raycast
-utility.Raycast = function(...)
-    local arguments = { ... }
-
-    if #arguments > 0 and arguments[4] == 999 then
-        local closest = getClosestPlayer()
-        if closest then
-            arguments[3] = closest[getgenv().aimpart].Position
-        end
-    end
-
-    return oldRaycast(table.unpack(arguments))
-end
+end)
