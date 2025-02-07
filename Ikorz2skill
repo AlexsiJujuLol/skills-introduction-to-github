@@ -3,37 +3,78 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local playerGui = player:FindFirstChild("PlayerGui") or Instance.new("PlayerGui", player)
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "IkorzUI"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
+
+-- Blur Effect
+local blur = Instance.new("BlurEffect")
+blur.Size = 0
+blur.Parent = game:GetService("Lighting")
+
+-- Loading Screen
+local loadingFrame = Instance.new("Frame")
+loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+loadingFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+loadingFrame.BackgroundTransparency = 0.5
+loadingFrame.Parent = screenGui
+
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(0, 200, 0, 50)
+loadingText.Position = UDim2.new(0.5, -100, 0.5, -25)
+loadingText.BackgroundTransparency = 1
+loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadingText.Font = Enum.Font.GothamBold
+loadingText.TextSize = 24
+loadingText.Text = "Loading UI..."
+loadingText.Parent = loadingFrame
+
+-- Smooth Dot Animation
+local dot = Instance.new("Frame")
+dot.Size = UDim2.new(0, 12, 0, 12)
+dot.Position = UDim2.new(0.5, -6, 0.6, -6)
+dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+dot.Parent = loadingFrame
+
+spawn(function()
+    while loadingFrame.Parent do
+        TweenService:Create(dot, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -6, 0.58, -6)}):Play()
+        wait(0.5)
+        TweenService:Create(dot, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -6, 0.6, -6)}):Play()
+        wait(0.5)
+    end
+end)
 
 -- Main UI Frame (Glass Effect)
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 420, 0, 270)
 mainFrame.Position = UDim2.new(0.5, -210, 0.5, -135)
 mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-mainFrame.BackgroundTransparency = 0.35 -- More Transparent
+mainFrame.BackgroundTransparency = 0.3
 mainFrame.ClipsDescendants = true
+mainFrame.Visible = false  -- Initially hidden until CAPTCHA is passed
 mainFrame.Parent = screenGui
 
--- UI Drop Shadow
+-- Full Shadow Effect
 local shadow = Instance.new("ImageLabel")
-shadow.Size = UDim2.new(1, 40, 1, 40)
-shadow.Position = UDim2.new(0, -20, 0, -20)
+shadow.Size = UDim2.new(1, 50, 1, 50)
+shadow.Position = UDim2.new(0, -25, 0, -25)
 shadow.Image = "rbxassetid://1316045217"
-shadow.ImageTransparency = 0.25
+shadow.ImageTransparency = 0.4
 shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(10, 10, 118, 118)
 shadow.BackgroundTransparency = 1
+shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
 shadow.Parent = mainFrame
 
 -- UI Stroke for Shininess
 local stroke = Instance.new("UIStroke")
 stroke.Thickness = 4
-stroke.Transparency = 0.05 -- Shinier
+stroke.Transparency = 0.05
 stroke.Color = Color3.fromRGB(160, 160, 255)
 stroke.Parent = mainFrame
 
@@ -47,7 +88,7 @@ titleBar.TextSize = 20
 titleBar.Text = "Ikorz UI"
 titleBar.Parent = mainFrame
 
--- Glowing Gradient on Title Bar
+-- Dynamic Glowing Gradient
 local glow = Instance.new("UIGradient")
 glow.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 160, 255)),
@@ -58,96 +99,67 @@ glow.Parent = titleBar
 
 spawn(function()
     while true do
-        TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
-            Rotation = 180
-        }):Play()
+        TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Rotation = 180}):Play()
         wait(2)
-        TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
-            Rotation = 0
-        }):Play()
+        TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Rotation = 0}):Play()
         wait(2)
     end
 end)
 
--- UI Button (Shiny Ripple Effect)
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0.8, 0, 0, 45)
-button.Position = UDim2.new(0.1, 0, 0.6, 0)
-button.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
-button.BackgroundTransparency = 0.1
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.Gotham
-button.TextSize = 18
-button.Text = "Click Me"
-button.Parent = mainFrame
-
--- Button Stroke (More Glow)
-local buttonStroke = Instance.new("UIStroke")
-buttonStroke.Thickness = 3
-buttonStroke.Color = Color3.fromRGB(200, 200, 255)
-buttonStroke.Parent = button
-
--- Button Hover & Ripple Effect
-button.MouseEnter:Connect(function()
-    TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        BackgroundColor3 = Color3.fromRGB(120, 120, 200)
-    }):Play()
-end)
-
-button.MouseLeave:Connect(function()
-    TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        BackgroundColor3 = Color3.fromRGB(80, 80, 120)
-    }):Play()
-end)
-
-button.MouseButton1Click:Connect(function()
-    local ripple = Instance.new("ImageLabel")
-    ripple.Size = UDim2.new(0, 10, 0, 10)
-    ripple.Position = UDim2.new(0.5, -5, 0.5, -5)
-    ripple.Image = "rbxassetid://3570695787"
-    ripple.ImageColor3 = Color3.fromRGB(200, 200, 255)
-    ripple.BackgroundTransparency = 1
-    ripple.Parent = button
-
-    TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = UDim2.new(2, 0, 2, 0),
-        ImageTransparency = 1
-    }):Play()
-
-    wait(0.5)
-    ripple:Destroy()
-end)
-
--- Improved Load Animation (Smooth Expand & Fade In)
+-- Improved Load Animation
 mainFrame.Position = UDim2.new(0.5, -210, 0.5, -400)
 mainFrame.Size = UDim2.new(0, 0, 0, 0)
 mainFrame.BackgroundTransparency = 1
 
-TweenService:Create(mainFrame, TweenInfo.new(1.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-    Position = UDim2.new(0.5, -210, 0.5, -135),
-    Size = UDim2.new(0, 420, 0, 270),
-    BackgroundTransparency = 0.35
-}):Play()
+local function loadMainUI()
+    TweenService:Create(mainFrame, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -210, 0.5, -135),
+        Size = UDim2.new(0, 420, 0, 270),
+        BackgroundTransparency = 0.3
+    }):Play()
 
--- Make UI Draggable
-local dragging, dragStart, startPos
+    mainFrame.Visible = true  -- Make UI visible after the loading animation
+end
 
-titleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+-- Human Verification System (Simple CAPTCHA)
+local captchaFrame = Instance.new("Frame")
+captchaFrame.Size = UDim2.new(0.5, 0, 0.3, 0)
+captchaFrame.Position = UDim2.new(0.25, 0, 0.35, 0)
+captchaFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 80)
+captchaFrame.Parent = screenGui
+
+local captchaLabel = Instance.new("TextLabel")
+captchaLabel.Size = UDim2.new(1, 0, 0.5, 0)
+captchaLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 80)
+captchaLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+captchaLabel.Font = Enum.Font.GothamBold
+captchaLabel.TextSize = 18
+captchaLabel.Text = "Are you human? Type 'yes' to continue."
+captchaLabel.Parent = captchaFrame
+
+local captchaInput = Instance.new("TextBox")
+captchaInput.Size = UDim2.new(0.8, 0, 0.4, 0)
+captchaInput.Position = UDim2.new(0.1, 0, 0.5, 0)
+captchaInput.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+captchaInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+captchaInput.Font = Enum.Font.Gotham
+captchaInput.TextSize = 18
+captchaInput.PlaceholderText = "Type 'yes' here"
+captchaInput.Parent = captchaFrame
+
+captchaInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed and captchaInput.Text:lower() == "yes" then
+        -- Remove loading screen and blur
+        captchaFrame:Destroy()
+        loadingFrame:Destroy()
+        blur.Size = 0
+        -- Show main UI
+        loadMainUI()
+    else
+        captchaInput.Text = ""
+        captchaInput.PlaceholderText = "Try again"
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
+-- Show blur effect and loading animation
+TweenService:Create(blur, TweenInfo.new(1), {Size = 24}):Play()
