@@ -1,10 +1,13 @@
-print("free script")
+-- Define missing global variables (if not already defined)
+Visualise2 = true
+VisualiseColor = Color3.new(255, 0, 0)
+BallVelocity = true
 
 task.spawn(function()
     coroutine.wrap(function()
-        ---------------------------
+        -------------------------------------------------
         -- INITIAL SETTINGS & VARIABLES
-        ---------------------------
+        -------------------------------------------------
         local nowprediction = true
         local auto_parry_enabled = false
         local anti_lag_enabled = false
@@ -32,9 +35,9 @@ task.spawn(function()
         local selected_axis = "Y"
         local selected_speed = 100
 
-        ---------------------------
+        -------------------------------------------------
         -- HELPER FUNCTIONS
-        ---------------------------
+        -------------------------------------------------
         local function getgelp()
             local nurysium_module = {}
             local Players = game:GetService("Players")
@@ -93,9 +96,9 @@ task.spawn(function()
 
         setfpscap(200)
 
-        ---------------------------
+        -------------------------------------------------
         -- GLOBAL REFERENCES
-        ---------------------------
+        -------------------------------------------------
         local Players = game:GetService("Players")
         local LocalPlayer = Players.LocalPlayer
         local client_id = RbxAnalyticsService:GetClientId()
@@ -103,9 +106,9 @@ task.spawn(function()
         local Alive = workspace:FindFirstChild("Alive")
         local Dead = workspace:FindFirstChild("Dead")
 
-        ---------------------------
+        -------------------------------------------------
         -- OBJECTS & DATA TABLES
-        ---------------------------
+        -------------------------------------------------
         local AutoParry = {
             ball = nil,
             target = nil,
@@ -159,7 +162,8 @@ task.spawn(function()
             }
         }
         AutoParry.target = { current = nil, from = nil, aim = nil }
-        local CParry = "PhantomZ"
+        -- Updated local CParry to your name "Ikorz"
+        local CParry = "Ikorz"
         AutoParry.entity_properties = {
             server_position = Vector3.new(0,0,0),
             velocity = Vector3.new(0,0,0),
@@ -174,9 +178,9 @@ task.spawn(function()
             return a + (b - a) * time_volume
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- WORLD FUNCTIONS
-        ---------------------------
+        -------------------------------------------------
         function World:get_pointer()
             local mouse_location = UserInputService:GetMouseLocation()
             local ray = workspace.CurrentCamera:ScreenPointToRay(mouse_location.X, mouse_location.Y, 0)
@@ -199,9 +203,9 @@ task.spawn(function()
             end
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- TRAIL & VISUALIZER FUNCTIONS
-        ---------------------------
+        -------------------------------------------------
         function makingtrail()
             local ball = nil
             local function createOrUpdateTrail()
@@ -260,9 +264,9 @@ task.spawn(function()
             end
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- VISUALIZER OBJECT
-        ---------------------------
+        -------------------------------------------------
         local Visualize = Instance.new("Part", workspace)
         Visualize.Color = Color3.new(0.14902, 0, 0)
         Visualize.Material = Enum.Material.ForceField
@@ -289,9 +293,9 @@ task.spawn(function()
             end
         end)
 
-        ---------------------------
+        -------------------------------------------------
         -- PLAYER AIM FUNCTIONS
-        ---------------------------
+        -------------------------------------------------
         function Player:get_aim_entity()
             local closest_entity = nil
             local minimal_dot_product = -math.huge
@@ -328,9 +332,9 @@ task.spawn(function()
             return closest_player
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- GETTING THE SWORD CONTROLLER FUNCTION
-        ---------------------------
+        -------------------------------------------------
         local PF
         local SC = nil
         for _, child in ipairs(ReplicatedStorage.Controllers:GetChildren()) do
@@ -341,13 +345,12 @@ task.spawn(function()
         for i, v in next, getconnections(LocalPlayer.PlayerGui.Hotbar.Block.Activated) do
             if (getfenv(v.Function).script == SC) then
                 PF = v.Function
-                print(v.Function)
             end
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- AUTO PARRY ACTIONS
-        ---------------------------
+        -------------------------------------------------
         function AutoParry.perform_grab_animation()
             local animation = ReplicatedStorage.Shared.SwordAPI.Collection.Default:FindFirstChild("GrabParry")
             local currently_equipped = Player.Entity.properties.sword
@@ -406,7 +409,6 @@ task.spawn(function()
                     ball_properties.parries = ball_properties.parries - 1
                 end
             end)
-            return
         end
 
         function AutoParry.reset()
@@ -421,9 +423,9 @@ task.spawn(function()
             AutoParry.target.from = nil
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- REMOTE EVENTS
-        ---------------------------
+        -------------------------------------------------
         ReplicatedStorage.Remotes.PlrHellHooked.OnClientEvent:Connect(function(hooker)
             if hooker.Name == LocalPlayer.Name then
                 AutoParry.ball.properties.hell_hook_completed = true
@@ -563,9 +565,9 @@ task.spawn(function()
             return true
         end
 
-        ---------------------------
+        -------------------------------------------------
         -- SERVER POSITION UPDATE
-        ---------------------------
+        -------------------------------------------------
         RunService:BindToRenderStep("server position simulation", 1, function()
             local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
             if not LocalPlayer.Character then return end
@@ -577,9 +579,9 @@ task.spawn(function()
             end)
         end)
 
-        ---------------------------
+        -------------------------------------------------
         -- PRE-SIMULATION UPDATE
-        ---------------------------
+        -------------------------------------------------
         RunService.PreSimulation:Connect(function()
             NetworkClient:SetOutgoingKBPSLimit(math.huge)
             local character = LocalPlayer.Character
@@ -593,16 +595,18 @@ task.spawn(function()
             player_properties.is_moving = Player.Entity.properties.speed > 30
         end)
 
-        print(CParry)
+        -------------------------------------------------
+        -- INITIAL BALL SETUP & TRAIL
+        -------------------------------------------------
+        AutoParry.ball.ball_entity = AutoParry.get_ball()
+        AutoParry.ball.client_ball_entity = AutoParry.get_client_ball()
         RunService.PreSimulation:Connect(function()
             makingtrail()
         end)
-        AutoParry.ball.ball_entity = AutoParry.get_ball()
-        AutoParry.ball.client_ball_entity = AutoParry.get_client_ball()
 
-        ---------------------------
+        -------------------------------------------------
         -- UPDATE BALL PROPERTIES
-        ---------------------------
+        -------------------------------------------------
         RunService.PreSimulation:Connect(function()
             local ball = AutoParry.ball.ball_entity
             if not ball then return end
@@ -648,9 +652,9 @@ task.spawn(function()
             AutoParry.entity_properties.dot = AutoParry.entity_properties.is_moving and math.max(AutoParry.entity_properties.direction:Dot(target_velocity.Unit), 0)
         end)
 
-        ---------------------------
-        -- EMOTES (for debugging/UI)
-        ---------------------------
+        -------------------------------------------------
+        -- EMOTES (DEBUG/UI PURPOSES)
+        -------------------------------------------------
         local dropdown_emotes_table = {}
         local emote_instances = {}
         for _, emote in ipairs(ReplicatedStorage.Misc.Emotes:GetChildren()) do
@@ -681,9 +685,9 @@ task.spawn(function()
             end
         end)
 
-        ---------------------------
+        -------------------------------------------------
         -- BALL RESPAWN MANAGEMENT
-        ---------------------------
+        -------------------------------------------------
         local is_respawned = false
         workspace.Balls.ChildRemoved:Connect(function(child)
             is_respawned = false
@@ -719,9 +723,9 @@ task.spawn(function()
             end)
         end)
 
-        ---------------------------
+        -------------------------------------------------
         -- AUTO PARRY LOOP (PreSimulation)
-        ---------------------------
+        -------------------------------------------------
         RunService.PreSimulation:Connect(function()
             coroutine.wrap(function()
                 if not AutoParry.ball.properties.auto_spam then return end
@@ -732,14 +736,13 @@ task.spawn(function()
                 end)
             end)()
         end)
-
     end)()
 end)
 
-----------------------------------
+-------------------------------------------------
 -- REMOTE EVENTS
-----------------------------------
-ReplicatedStorage.Remotes.ParrySuccessAll.OnClientEvent:Connect(function(slash, root)
+-------------------------------------------------
+ReplicatedStorage.Remotes.PlrHellHooked.OnClientEvent:Connect(function(slash, root)
     task.spawn(function()
         if root.Parent and root.Parent ~= LocalPlayer.Character then
             if root.Parent.Parent ~= Alive then return end
@@ -756,7 +759,7 @@ ReplicatedStorage.Remotes.ParrySuccessAll.OnClientEvent:Connect(function(slash, 
     end
 end)
 
-ReplicatedStorage.Remotes.ParrySuccess.OnClientEvent:Connect(function()
+ReplicatedStorage.Remotes.PlrHellHookSuccess.OnClientEvent:Connect(function()
     if LocalPlayer.Character.Parent ~= Alive then return end
     if not Player.properties.grab_animation then return end
     Player.properties.grab_animation:Stop()
@@ -770,9 +773,9 @@ ReplicatedStorage.Remotes.ParrySuccess.OnClientEvent:Connect(function()
     ball = nil
 end)
 
-----------------------------------
+-------------------------------------------------
 -- MAIN POST-SIMULATION LOOP
-----------------------------------
+-------------------------------------------------
 local status = "Idle"
 task.spawn(function()
     RunService.PostSimulation:Connect(function()
@@ -888,9 +891,9 @@ task.spawn(function()
     end)
 end)
 
-----------------------------------
+-------------------------------------------------
 -- UTILITY FUNCTIONS FOR VISUALIZER & VELOCITY
-----------------------------------
+-------------------------------------------------
 local function get_character()
     return LocalPlayer and LocalPlayer.Character
 end
@@ -1060,9 +1063,9 @@ end)
 
 create_visualizer()
 
-----------------------------------
+-------------------------------------------------
 -- FLUENT UI SETUP
-----------------------------------
+-------------------------------------------------
 local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/Fsploit/UI-lib/refs/heads/main/Fluentremake.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
@@ -1142,7 +1145,6 @@ do
     })
     parry_mode:OnChanged(function(v)
         parry_mode = tostring(v)
-        print(v)
     end)
     local personnel_detector2 = Tabs.Setting:AddToggle("pd", {
         Title = "Mod Detect",
@@ -1159,27 +1161,22 @@ do
     })
     anti_lag:OnChanged(function(v)
         anti_lag_enabled = v
+        local lighting = game:GetService("Lighting")
         if anti_lag_enabled then
-            local lighting = game:GetService("Lighting")
             lighting.GlobalShadows = false
             lighting.Brightness = 0
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Part") or v:IsA("MeshPart") then
-                    -- do nothing
-                elseif v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") then
-                    v.Enabled = false
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
+                    obj.Enabled = false
                 end
             end
             lighting.FogEnd = 9e9
         else
-            local lighting = game:GetService("Lighting")
             lighting.GlobalShadows = true
             lighting.Brightness = 2
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Part") or v:IsA("MeshPart") then
-                    -- do nothing
-                elseif v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") then
-                    v.Enabled = true
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
+                    obj.Enabled = true
                 end
             end
         end
@@ -1252,8 +1249,7 @@ do
         Max = 500,
         Rounding = 1,
         Callback = function(Value)
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
-            print("Hi")
+            LocalPlayer.Character.Humanoid.WalkSpeed = Value
         end
     })
     local Slider = Tabs.Config:AddSlider("Slider", {
@@ -1264,8 +1260,7 @@ do
         Max = 500,
         Rounding = 1,
         Callback = function(Value)
-            game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
-            print("Hi")
+            LocalPlayer.Character.Humanoid.JumpPower = Value
         end
     })
     local Slider = Tabs.Config:AddSlider("Slider", {
@@ -1276,10 +1271,7 @@ do
         Max = 500,
         Rounding = 1,
         Callback = function(Value)
-            local FovNumber = Value
-            local Camera = workspace.CurrentCamera
-            Camera.FieldOfView = FovNumber
-            print("Hi")
+            workspace.CurrentCamera.FieldOfView = Value
         end
     })
     local Slider = Tabs.Config:AddSlider("Slider", {
@@ -1291,19 +1283,18 @@ do
         Rounding = 1,
         Callback = function(Value)
             workspace.Gravity = Value
-            print("Hi")
         end
     })
 end
 
 local debugger = loadstring(game:HttpGet("https://sddd/r/lo8xY", true))()
 local gui = debugger:Init()
-local debuglabel1 = gui:AddDebugLabel("Status: ".."Nil")
-local debuglabel3 = gui:AddDebugLabel("Ball Speed: ".."Nil")
+local debuglabel1 = gui:AddDebugLabel("Status: " .. "Nil")
+local debuglabel3 = gui:AddDebugLabel("Ball Speed: " .. "Nil")
 RunService.PostSimulation:Connect(function()
     while true do
-        debuglabel1:UpdateLabel("Status: "..status)
-        debuglabel3:UpdateLabel("Ball Speed: ".. AutoParry.ball.properties.speed)
+        debuglabel1:UpdateLabel("Status: " .. status)
+        debuglabel3:UpdateLabel("Ball Speed: " .. AutoParry.ball.properties.speed)
         task.wait(0.1)
     end
 end)
